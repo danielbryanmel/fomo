@@ -1,6 +1,7 @@
 import { DarkTheme, router, Stack, ThemeProvider, type Theme } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
-import { Platform, Pressable } from 'react-native';
+import { Platform } from 'react-native';
+import { PressableScale } from '@/components/motion/PressableScale';
 import { WebFrame } from '@/components/web/WebFrame';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -43,9 +44,11 @@ export default function RootLayout() {
               headerShadowVisible: false,
               contentStyle: { backgroundColor: colors.background },
               animation: 'slide_from_right',
-              // Web: quem abre um link direto (ex.: /post/123 pelo WhatsApp) não tem histórico —
-              // mostramos um "voltar" que leva ao início.
-              headerLeft: Platform.OS === 'web' ? ({ canGoBack }) => (canGoBack ? undefined : <HomeBack />) : undefined,
+              // Voltar próprio, igual em todas as telas e plataformas. Sem histórico (link aberto
+              // direto pelo WhatsApp), leva ao início em vez de sumir.
+              headerLeft: ({ canGoBack }) => <HeaderBack canGoBack={!!canGoBack} />,
+              headerTitleStyle: { fontWeight: '700', fontSize: 17 },
+              headerTitleAlign: 'center',
               animationDuration: 260,
             }}
           >
@@ -74,10 +77,20 @@ export default function RootLayout() {
   );
 }
 
-function HomeBack() {
+function HeaderBack({ canGoBack }: { canGoBack: boolean }) {
   return (
-    <Pressable onPress={() => router.replace('/')} accessibilityRole="button" accessibilityLabel="Ir para o início" hitSlop={12} style={{ paddingHorizontal: 8 }}>
-      <ChevronLeft size={24} color={colors.text} />
-    </Pressable>
+    <PressableScale
+      onPress={() => (canGoBack ? router.back() : router.replace('/'))}
+      accessibilityRole="button"
+      accessibilityLabel={canGoBack ? 'Voltar' : 'Ir para o início'}
+      hitSlop={10}
+      scaleTo={0.88}
+      style={{
+        width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: colors.border, marginLeft: Platform.OS === 'web' ? 12 : 0,
+      }}
+    >
+      <ChevronLeft size={22} color={colors.text} style={{ marginLeft: -2 }} />
+    </PressableScale>
   );
 }

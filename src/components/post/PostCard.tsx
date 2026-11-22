@@ -1,6 +1,7 @@
 import { Link, router } from 'expo-router';
 import { DemoTag } from '@/components/ui/DemoTag';
-import { Bookmark, Flag, Heart, MapPin, MessageCircle, MoreHorizontal, Send, Trash2 } from 'lucide-react-native';
+import { Flag, MapPin, MoreHorizontal, Trash2 } from 'lucide-react-native';
+import { FomoCommentIcon, FomoLikeIcon, FomoSaveIcon, FomoShareIcon } from '@/components/icons/FomoIcons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { AnimatedCount } from '@/components/motion';
@@ -76,17 +77,17 @@ export function PostCard({ post, onChange, onRemoved, detail }: Props) {
           selected={post.likedByMe}
           pop
           onPress={actions.toggleLike}
-          icon={<Heart size={24} color={post.likedByMe ? colors.accentPink : colors.text} fill={post.likedByMe ? colors.accentPink : 'transparent'} />}
+          icon={<FomoLikeIcon size={25} active={post.likedByMe} />}
         />
-        <IconButton label="Comentários" onPress={openPost} icon={<MessageCircle size={23} color={colors.text} />} />
-        <IconButton label="Compartilhar" onPress={actions.share} icon={<Send size={22} color={colors.text} />} />
+        <IconButton label="Comentários" onPress={openPost} icon={<FomoCommentIcon size={25} />} />
+        <IconButton label="Chamar a galera" onPress={actions.share} icon={<FomoShareIcon size={24} />} />
         <View style={styles.flex} />
         <IconButton
-          label={post.savedByMe ? 'Remover dos salvos' : 'Salvar'}
+          label={post.savedByMe ? 'Tirar do quero ir' : 'Quero ir'}
           selected={post.savedByMe}
           pop
           onPress={actions.toggleSave}
-          icon={<Bookmark size={23} color={colors.text} fill={post.savedByMe ? colors.text : 'transparent'} />}
+          icon={<FomoSaveIcon size={25} active={post.savedByMe} />}
         />
       </View>
 

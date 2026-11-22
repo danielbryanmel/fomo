@@ -15,6 +15,8 @@ export type ExploreMapProps = {
   /** Disparado ao terminar um movimento (debounce fica a cargo de quem consome). */
   onRegionChangeComplete: (region: Region) => void;
   userLocation: GeoPoint | null;
+  /** Raio de incerteza da localização (m). Mostrado como círculo no mapa. */
+  userAccuracyM?: number | null;
   /** Espaço ocupado embaixo (bottom sheet) para centralizar pins acima dele. */
   bottomInset: number;
   topInset: number;

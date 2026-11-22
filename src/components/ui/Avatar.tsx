@@ -9,11 +9,15 @@ const TINTS = ['#3A2340', '#2A2346', '#3D2233', '#22303F', '#33283F'];
 
 /** Avatar com fallback de iniciais (sem imagens externas no mock). */
 export function Avatar({ name, url, size = 40, seed = name }: Props) {
-  const initials = name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('');
+  // só letras/números: "Lia (demo)" → "L"; ignora parênteses, emoji e pontuação
+  const initials =
+    name
+      .split(/\s+/)
+      .map((w) => w.replace(/[^\p{L}\p{N}]/gu, ''))
+      .filter((w) => w && w.toLowerCase() !== 'demo')
+      .slice(0, 2)
+      .map((w) => w[0]!.toUpperCase())
+      .join('') || '·';
   const tint = TINTS[[...seed].reduce((a, c) => a + c.charCodeAt(0), 0) % TINTS.length];
   const style = { width: size, height: size, borderRadius: radius.pill };
 

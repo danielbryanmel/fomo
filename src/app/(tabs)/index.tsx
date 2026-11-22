@@ -118,6 +118,7 @@ export default function ExploreScreen() {
         onSelect={selectEvent}
         onRegionChangeComplete={explore.setRegion}
         userLocation={location.neighborhood ? null : location.position}
+        userAccuracyM={location.neighborhood ? null : location.accuracyM}
         topInset={topOverlayH}
         bottomInset={sheetH}
       />
@@ -166,14 +167,25 @@ export default function ExploreScreen() {
         </ScrollView>
       </View>
 
+      {/* Localização imprecisa (comum no computador ou com GPS desligado): avisa com honestidade */}
+      {!location.neighborhood && location.position && (location.accuracyM ?? 0) > 300 ? (
+        <Appear kind="fade" style={[styles.accuracy, { bottom: sheetH + spacing.md + 6 }]}>
+          <Text variant="mono" tone="secondary" style={{ fontSize: 11 }}>
+            precisão ~{(location.accuracyM ?? 0) >= 1000 ? `${((location.accuracyM ?? 0) / 1000).toFixed(1).replace('.', ',')} km` : `${location.accuracyM} m`} · ative o GPS
+          </Text>
+        </Appear>
+      ) : null}
+
       {/* Centralizar na minha localização */}
       <Pressable
         onPress={async () => {
-          const p = location.position ?? (await location.request());
+          // mostra a última posição já, e refina com uma leitura nova (precisão alta)
+          if (location.position) mapRef.current?.animateTo(regionAround(location.position, 0.02));
+          const p = await location.request();
           if (p) {
             await location.setNeighborhood(null);
             mapRef.current?.animateTo(regionAround(p, 0.02));
-          } else setPlaceOpen(true);
+          } else if (!location.position) setPlaceOpen(true);
         }}
         style={[styles.locate, { bottom: sheetH + spacing.md }]}
         accessibilityRole="button"
@@ -250,6 +262,7 @@ const glass = {
 } as const;
 
 const styles = StyleSheet.create({
+  accuracy: { position: 'absolute', right: 72, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(10,10,12,0.82)', borderWidth: 1, borderColor: colors.border },
   root: { flex: 1, backgroundColor: colors.background },
   top: { position: 'absolute', left: 0, right: 0, top: 0, gap: spacing.md },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, minHeight: 44 },

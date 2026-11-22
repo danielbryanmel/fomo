@@ -1,5 +1,6 @@
 import { Link } from 'expo-router';
-import { MessageCircle, SendHorizontal, Trash2 } from 'lucide-react-native';
+import { FomoCommentIcon } from '@/components/icons/FomoIcons';
+import { SendHorizontal, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut, LinearTransition, ReduceMotion } from 'react-native-reanimated';
@@ -65,7 +66,7 @@ export function Comments({ postId, onCountChange }: Props) {
       ) : null}
       {!list.loading && !list.error && !items.length ? (
         <View style={[styles.empty, styles.pad]}>
-          <MessageCircle size={22} color={colors.textMuted} />
+          <FomoCommentIcon size={24} color={colors.textMuted} />
           <Text tone="muted" align="center">Ninguém comentou ainda. Conta como foi.</Text>
         </View>
       ) : null}

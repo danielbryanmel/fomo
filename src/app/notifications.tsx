@@ -1,5 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
-import { Award, BellOff, CalendarCheck, Heart, MessageCircle, ShieldCheck, UserCheck, UserPlus } from 'lucide-react-native';
+import { FomoCommentIcon, FomoLikeIcon } from '@/components/icons/FomoIcons';
+import { Award, BellOff, CalendarCheck, ShieldCheck, UserCheck, UserPlus } from 'lucide-react-native';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 import Animated, { FadeOut, LinearTransition, ReduceMotion } from 'react-native-reanimated';
@@ -26,8 +27,8 @@ const ICON: Record<NotificationType, ReactNode> = {
   follow: <UserPlus size={14} color={colors.text} />,
   follow_request: <UserPlus size={14} color={colors.text} />,
   follow_accepted: <UserCheck size={14} color={colors.text} />,
-  like: <Heart size={14} color={colors.text} fill={colors.text} />,
-  comment: <MessageCircle size={14} color={colors.text} />,
+  like: <FomoLikeIcon size={14} color={colors.text} active />,
+  comment: <FomoCommentIcon size={14} color={colors.text} />,
   achievement: <Award size={14} color={colors.textOnLive} />,
   event_approved: <CalendarCheck size={14} color={colors.text} />,
   moderation: <ShieldCheck size={14} color={colors.text} />,

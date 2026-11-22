@@ -1,5 +1,6 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { Bookmark, CalendarX, ChevronLeft, ImagePlus, MapPinned, Navigation, Share2, Star, Ticket } from 'lucide-react-native';
+import { FomoSaveIcon } from '@/components/icons/FomoIcons';
+import { CalendarX, ChevronLeft, ImagePlus, MapPinned, Navigation, Share2, Star, Ticket } from 'lucide-react-native';
 import { type ReactNode, useCallback, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -162,7 +163,7 @@ export default function EventDetailScreen() {
         <View style={styles.flex} />
         <GlassButton label="Compartilhar" onPress={share}><Share2 size={18} color={colors.text} /></GlassButton>
         <GlassButton label={e.savedByMe ? 'Remover dos salvos' : 'Salvar'} onPress={toggleSave}>
-          <Bookmark size={18} color={colors.text} fill={e.savedByMe ? colors.text : 'transparent'} />
+          <FomoSaveIcon size={19} active={e.savedByMe} />
         </GlassButton>
       </View>
 
@@ -172,7 +173,7 @@ export default function EventDetailScreen() {
           {now ? (
             <Button label="Tô aqui · informar" icon={<MapPinned size={18} color={colors.text} />} fullWidth onPress={() => router.push({ pathname: '/report/[id]', params: { id: e.id } })} accessibilityHint="Conte a lotação, vibe e fila em três toques" />
           ) : (
-            <Button label={e.savedByMe ? 'Salvo · te lembramos' : 'Salvar para depois'} variant={e.savedByMe ? 'secondary' : 'primary'} icon={<Bookmark size={18} color={colors.text} fill={e.savedByMe ? colors.text : 'transparent'} />} fullWidth onPress={toggleSave} />
+            <Button label={e.savedByMe ? 'Salvo · te lembramos' : 'Salvar para depois'} variant={e.savedByMe ? 'secondary' : 'primary'} icon={<FomoSaveIcon size={19} active={e.savedByMe} />} fullWidth onPress={toggleSave} />
           )}
         </View>
         <GlassButton label="Como chegar" onPress={() => openDirections(e.latitude, e.longitude, e.venueName ?? e.title)} size={52}>

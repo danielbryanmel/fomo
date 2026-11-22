@@ -1,6 +1,6 @@
 import { Appear } from '@/components/motion';
+import { FomoSaveIcon } from '@/components/icons/FomoIcons';
 import { useFocusEffect } from 'expo-router';
-import { Bookmark } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { EventCard, EventCardSkeleton } from '@/components/event/EventCard';
@@ -39,7 +39,7 @@ export default function SavedScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={current.refreshing} onRefresh={current.refresh} tintColor={colors.accentPink} />}
       >
-        <ScreenHeader title="Salvos" subtitle="Só você vê esta lista" />
+        <ScreenHeader title="Quero ir" subtitle="Rolês e posts que você guardou · só você vê" />
         <SegmentedTabs tabs={[{ key: 'events', label: 'Eventos' }, { key: 'posts', label: 'Publicações' }]} value={tab} onChange={setTab} />
         <View style={styles.list}>
           {current.loading && !current.data ? (tab === 'events' ? <EventCardSkeleton /> : <PostCardSkeleton />) : null}
@@ -48,7 +48,7 @@ export default function SavedScreen() {
           ) : null}
           {empty ? (
             <StateView
-              icon={<Bookmark size={26} color={colors.textSecondary} />}
+              icon={<FomoSaveIcon size={28} color={colors.textSecondary} />}
               title={tab === 'events' ? 'Nenhum evento salvo' : 'Nenhuma publicação salva'}
               description="Toque no ícone de salvar para guardar e encontrar depois."
             />

@@ -1,8 +1,8 @@
 import { Image } from 'expo-image';
-import { Heart } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { type LayoutChangeEvent, type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { FomoBurst } from '@/components/icons/FomoIcons';
 import { Text } from '@/components/ui/Text';
 import { displayRatio } from '@/features/compose/photos';
 import { colors, radius, spacing } from '@/theme';
@@ -25,7 +25,7 @@ export function PhotoCarousel({ photos, onDoubleTap, onPress, rounded = 0, acces
   const single = useRef<ReturnType<typeof setTimeout>>(undefined);
   const heart = useSharedValue(0);
 
-  const heartStyle = useAnimatedStyle(() => ({ opacity: heart.value, transform: [{ scale: 0.6 + heart.value * 0.6 }] }));
+  const heartStyle = useAnimatedStyle(() => ({ opacity: heart.value, transform: [{ scale: 0.5 + heart.value * 0.6 }, { rotate: `${(1 - heart.value) * -25}deg` }] }));
 
   const first = photos[0];
   if (!first) return null;
@@ -65,7 +65,7 @@ export function PhotoCarousel({ photos, onDoubleTap, onPress, rounded = 0, acces
       </ScrollView>
 
       <Animated.View pointerEvents="none" style={[styles.heart, heartStyle]}>
-        <Heart size={96} color={colors.text} fill={colors.text} />
+        <FomoBurst size={104} />
       </Animated.View>
 
       {photos.length > 1 ? (
