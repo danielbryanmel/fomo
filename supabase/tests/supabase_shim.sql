@@ -41,3 +41,9 @@ grant usage on schema public to anon, authenticated;
 alter default privileges in schema public grant all on tables to anon, authenticated;
 alter default privileges in schema public grant all on functions to anon, authenticated;
 alter default privileges in schema public grant all on sequences to anon, authenticated;
+
+-- pg_cron (stub) para migrations que agendam jobs
+create schema if not exists cron;
+create table if not exists cron.job (jobname text);
+create or replace function cron.schedule(n text, s text, c text) returns int language sql as $$ insert into cron.job values (n) returning 1 $$;
+create or replace function cron.unschedule(n text) returns boolean language sql as $$ delete from cron.job where jobname = n returning true $$;

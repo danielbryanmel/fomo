@@ -3,6 +3,7 @@
 -- Os rolês demo "ao vivo" passam a ter relatos espalhados pelas últimas ~3 h
 -- (a noite "enche" aos poucos), para o gráfico "como tá a noite" fazer sentido.
 -- A lotação ao vivo continua vindo só dos relatos dos últimos 90 min (regra real).
+-- A renovação passa a rodar a cada 15 min, para o "agora" nunca ficar vazio.
 -- ============================================================================
 create or replace function public.demo_refresh()
 returns void language plpgsql security definer set search_path = public as $$
@@ -48,8 +49,12 @@ begin
               greatest(1, least(4, e.demo_crowd + (case when i % 4 = 0 then -1 else 0 end)))::smallint,
               vibes[least(3, e.demo_crowd)], case when i % 3 = 0 then null else 'bom' end,
               queues[least(4, e.demo_crowd)],
-              now() - make_interval(mins => (i * 9) % 80));
+              now() - make_interval(mins => 2 + (i * 11) % 75));
     end loop;
   end loop;
 end $$;
 revoke execute on function public.demo_refresh() from public, anon, authenticated;
+
+select public.demo_refresh();
+select cron.unschedule('fomo_demo_refresh') where exists (select 1 from cron.job where jobname = 'fomo_demo_refresh');
+select cron.schedule('fomo_demo_refresh', '*/15 * * * *', $$ select public.demo_refresh(); $$);
