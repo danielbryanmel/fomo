@@ -39,3 +39,10 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# prévia
+dist-preview/
+.preview-export/
+
+# links locais de teste
+supabase/tests/node_modules
