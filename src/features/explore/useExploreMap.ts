@@ -38,7 +38,10 @@ export function useExploreMap(initialRegion: Region, origin: GeoPoint | null) {
         price: effectiveFilters.price,
         query,
       });
-      if (id === req.current) setEvents(list);
+      // ordem: rolando agora (por lotação) → rolês reais → demonstração
+      const rank = (e: (typeof list)[number]) => (e.happeningNow ? 0 : e.isDemo ? 2 : 1);
+      const sorted = list.map((e, i) => ({ e, i })).sort((a, b) => rank(a.e) - rank(b.e) || a.i - b.i).map((x) => x.e);
+      if (id === req.current) setEvents(sorted);
     } catch (e) {
       if (id === req.current) setError(e instanceof Error ? e : new Error(String(e)));
     } finally {

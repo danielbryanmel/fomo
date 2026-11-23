@@ -69,7 +69,7 @@ function pinHtml(e: MapEvent, selected: boolean) {
   const dot = `width:${size}px;height:${size}px;background:${now ? color : colors.background};border:${now ? (selected ? 3 : 1.5) : 2.5}px solid ${
     now ? (selected ? colors.text : 'rgba(0,0,0,.5)') : color
   };${selected ? `box-shadow:0 0 0 6px ${color}40;` : ''}`;
-  const label = selected || (level ?? 0) >= 3 ? `<div class="fomo-pin-label${selected ? ' sel' : ''}">${esc(e.venueName ?? e.title)}</div>` : '';
+  const label = selected || (level ?? 0) >= 3 || (!e.isDemo && !now) ? `<div class="fomo-pin-label${selected ? ' sel' : ''}">${esc(e.venueName ?? e.title)}</div>` : '';
   return `<div class="fomo-pin-box" style="width:${box}px;height:${box}px">${
     level ? `<div class="fomo-pin-halo" style="width:${halo}px;height:${halo}px;background:${color}"></div>` : ''
   }<div class="fomo-pin-dot" style="${dot}"></div></div>${label}`;

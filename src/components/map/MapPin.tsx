@@ -37,7 +37,7 @@ export function MapPin({ event, selected }: Props) {
           ]}
         />
       </View>
-      {selected || (level ?? 0) >= 3 ? (
+      {selected || (level ?? 0) >= 3 || (!event.isDemo && !now) ? (
         <View style={[styles.label, selected && styles.labelSelected]}>
           <Text variant="label" numberOfLines={1} style={{ fontSize: 11 }}>{event.venueName ?? event.title}</Text>
         </View>
