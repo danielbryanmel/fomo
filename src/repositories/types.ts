@@ -34,6 +34,7 @@ import type {
   PersonSuggestion,
   StoryGroup,
   GroupLocation,
+  ConversationInfo,
 } from '@/types/domain';
 
 /**
@@ -151,7 +152,11 @@ export interface StoriesRepository {
   tray(): Promise<StoryGroup[]>;
   create(input: CreateStoryInput, onProgress?: (p: number) => void): Promise<void>;
   view(storyId: string): Promise<void>;
-  viewers(storyId: string): Promise<{ profile: UserProfile; viewedAt: string }[]>;
+  viewers(storyId: string): Promise<{ profile: UserProfile; viewedAt: string; liked: boolean }[]>;
+  /** Curte/descurte. Devolve se ficou curtido. */
+  like(storyId: string): Promise<boolean>;
+  /** Responde no direct do autor. Devolve o id da conversa. */
+  reply(storyId: string, body: string): Promise<string>;
   remove(storyId: string): Promise<void>;
 }
 
@@ -164,6 +169,11 @@ export interface MessagesRepository {
   send(conversationId: string, body: string): Promise<Message>;
   markRead(conversationId: string): Promise<void>;
   subscribe(conversationId: string, onMessage: (m: Message) => void): () => void;
+  info(conversationId: string): Promise<ConversationInfo | null>;
+  /** Grupo no direct: só entra quem você segue ou te segue. */
+  createGroup(title: string, memberIds: string[]): Promise<string>;
+  addMembers(conversationId: string, memberIds: string[]): Promise<number>;
+  leave(conversationId: string): Promise<void>;
 }
 
 export interface GroupsRepository {

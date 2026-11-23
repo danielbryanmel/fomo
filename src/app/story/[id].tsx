@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { Eye, MapPin, Trash2, X } from 'lucide-react-native';
+import { Eye, Heart, MapPin, SendHorizontal, Trash2, X } from 'lucide-react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PersonRow } from '@/components/profile/PersonRow';
 import { ActionSheet, Avatar, Skeleton, StateView, Text, useToast } from '@/components/ui';
@@ -27,7 +28,12 @@ export default function StoryViewer() {
   const [si, setSi] = useState(0);
   const [progress, setProgress] = useState(0);
   const paused = useRef(false);
-  const [viewers, setViewers] = useState<{ profile: UserProfile; viewedAt: string }[] | null>(null);
+  const [viewers, setViewers] = useState<{ profile: UserProfile; viewedAt: string; liked: boolean }[] | null>(null);
+  const [reply, setReply] = useState('');
+  const [typing, setTyping] = useState(false);
+  const [likedMap, setLikedMap] = useState<Record<string, boolean>>({});
+  const heart = useSharedValue(1);
+  const heartStyle = useAnimatedStyle(() => ({ transform: [{ scale: heart.value }] }));
   const [confirm, setConfirm] = useState(false);
 
   // abre no autor pedido, no primeiro story ainda não visto
@@ -88,7 +94,7 @@ export default function StoryViewer() {
 
   // relógio do story
   useEffect(() => {
-    if (!story || viewers || confirm) return;
+    if (!story || viewers || confirm || typing) return;
     const t = setInterval(() => {
       if (paused.current) return;
       setProgress((p) => {
@@ -101,7 +107,7 @@ export default function StoryViewer() {
       });
     }, TICK);
     return () => clearInterval(t);
-  }, [story, next, viewers, confirm]);
+  }, [story, next, viewers, confirm, typing]);
 
   async function openViewers() {
     if (!story) return;
@@ -110,6 +116,35 @@ export default function StoryViewer() {
       setViewers(await repositories.stories.viewers(story.id));
     } catch {
       setViewers([]);
+    }
+  }
+
+  const liked = story ? (likedMap[story.id] ?? story.liked) : false;
+  async function toggleLike() {
+    if (!story) return;
+    const id = story.id;
+    const prev = liked;
+    setLikedMap((m) => ({ ...m, [id]: !prev }));
+    if (!prev) heart.value = withSequence(withSpring(1.35, { damping: 6 }), withSpring(1));
+    try {
+      const v = await repositories.stories.like(id);
+      setLikedMap((m) => ({ ...m, [id]: v }));
+    } catch {
+      setLikedMap((m) => ({ ...m, [id]: prev }));
+      toast('Não foi possível curtir agora.', 'error');
+    }
+  }
+
+  async function sendReply() {
+    if (!story || !reply.trim()) return;
+    const body = reply.trim();
+    setReply('');
+    try {
+      await repositories.stories.reply(story.id, body);
+      toast(`Resposta enviada no direct de ${group?.author.username ?? ''}`, 'success');
+    } catch (e) {
+      setReply(body);
+      toast(e instanceof Error ? e.message : 'Não foi possível enviar.', 'error');
     }
   }
 
@@ -187,12 +222,45 @@ export default function StoryViewer() {
             <Pressable style={styles.pill} onPress={openViewers} accessibilityRole="button">
               <Eye size={16} color={colors.text} />
               <Text variant="bodyStrong">{story.views ?? 0} {story.views === 1 ? 'visualização' : 'visualizações'}</Text>
+              {story.likes ? (
+                <>
+                  <Heart size={14} color={colors.accentPink} fill={colors.accentPink} />
+                  <Text variant="bodyStrong">{story.likes}</Text>
+                </>
+              ) : null}
             </Pressable>
             <Pressable style={styles.pill} onPress={() => { paused.current = true; setConfirm(true); }} accessibilityRole="button" accessibilityLabel="Apagar story">
               <Trash2 size={16} color={colors.text} />
             </Pressable>
           </View>
-        ) : null}
+        ) : (
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.replyRow}>
+            <TextInput
+              value={reply}
+              onChangeText={setReply}
+              onFocus={() => setTyping(true)}
+              onBlur={() => setTyping(false)}
+              placeholder={`Responder ${group.author.username}…`}
+              placeholderTextColor="rgba(255,255,255,0.7)"
+              style={styles.replyInput}
+              maxLength={500}
+              onSubmitEditing={sendReply}
+              returnKeyType="send"
+              accessibilityLabel="Responder ao story"
+            />
+            {reply.trim() ? (
+              <Pressable onPress={sendReply} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel="Enviar resposta">
+                <SendHorizontal size={22} color={colors.text} />
+              </Pressable>
+            ) : (
+              <Pressable onPress={toggleLike} style={styles.iconBtn} accessibilityRole="button" accessibilityLabel={liked ? 'Descurtir story' : 'Curtir story'} accessibilityState={{ selected: liked }}>
+                <Animated.View style={heartStyle}>
+                  <Heart size={26} color={liked ? colors.accentPink : colors.text} fill={liked ? colors.accentPink : 'transparent'} />
+                </Animated.View>
+              </Pressable>
+            )}
+          </KeyboardAvoidingView>
+        )}
       </View>
 
       <Modal visible={!!viewers} transparent animationType="slide" onRequestClose={() => { setViewers(null); paused.current = false; }}>
@@ -202,7 +270,10 @@ export default function StoryViewer() {
           <FlatList
             data={viewers ?? []}
             keyExtractor={(v) => v.profile.id}
-            renderItem={({ item }) => <PersonRow person={item.profile} subtitle={formatRelative(item.viewedAt)} />}
+            renderItem={({ item }) => (
+              <PersonRow person={item.profile} subtitle={formatRelative(item.viewedAt)}
+                right={item.liked ? <Heart size={18} color={colors.accentPink} fill={colors.accentPink} accessibilityLabel="Curtiu" /> : undefined} />
+            )}
             ListEmptyComponent={<Text tone="muted">Ninguém viu ainda.</Text>}
           />
         </View>
@@ -237,6 +308,9 @@ const styles = StyleSheet.create({
   caption: { fontSize: 17 },
   ownRow: { flexDirection: 'row', gap: spacing.sm },
   pill: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 44, paddingHorizontal: spacing.md, borderRadius: 22, backgroundColor: 'rgba(0,0,0,0.55)' },
+  replyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  replyInput: { outlineStyle: 'none' as never, flex: 1, minHeight: 46, paddingHorizontal: spacing.lg, borderRadius: 23, borderWidth: 1, borderColor: 'rgba(255,255,255,0.55)', color: colors.text, fontSize: 16, backgroundColor: 'rgba(0,0,0,0.25)' },
+  iconBtn: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
   sheet: { maxHeight: '60%', padding: spacing.lg, gap: spacing.md, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, backgroundColor: colors.surface },
 });

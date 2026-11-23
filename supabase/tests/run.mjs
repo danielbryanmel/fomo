@@ -415,6 +415,42 @@ for (let i = 0; i < 45; i++) await as(B, "select report_client_error('error', 's
 ok('erros: limite por pessoa (40/10 min)', (await one(null, 'select count(*)::int n from client_errors where user_id=$1', [B])).n === 40);
 ok('erros: tipo inválido ignorado', (await as(A, "select report_client_error('hack', 'x')").then(() => true)) && (await one(null, "select count(*)::int n from client_errors where kind not in ('error','feedback')")).n === 0);
 
+// ── Social 6: curtir/responder story, grupos no direct
+const S3 = '30000000-0000-0000-0000-000000000003';
+await as(C, `select create_story($1, $2, 1080, 1920, null, 'teste', 'followers', false)`, [S3, `${C}/stories/${S3}.jpg`]);
+ok('story: seguidor curte', (await one(A, 'select toggle_story_like($1) v', [S3])).v === true);
+ok('story: autor recebe notificação de curtida', (await one(null, "select count(*)::int n from notifications where type='story_like' and entity_id=$1", [S3])).n === 1);
+ok('story: autor vê quem curtiu', (await one(C, 'select story_viewers($1) v', [S3])).v.some((x) => x.profile.id === A && x.liked));
+ok('story: bandeja mostra "curtido" e o total para o autor', (await one(A, 'select stories_tray() t', [])).t.find((g) => g.author.id === C).stories.find((x) => x.id === S3).liked === true
+  && (await one(C, 'select stories_tray() t')).t.find((g) => g.author.id === C).stories.find((x) => x.id === S3).likes === 1);
+ok('story: curtir de novo descurte', (await one(A, 'select toggle_story_like($1) v', [S3])).v === false);
+ok('story: estranho NÃO curte', !!(await fails(D, 'select toggle_story_like($1)', [S3])));
+ok('story: autor não curte o próprio', !!(await fails(C, 'select toggle_story_like($1)', [S3])));
+const rc = (await one(A, "select reply_story($1, 'que lugar é esse?') c", [S3])).c;
+const rm = await one(null, 'select body, reply_label, story_id from messages where conversation_id=$1 order by created_at desc limit 1', [rc]);
+ok('story: resposta vira mensagem no direct com rótulo', rm.body === 'que lugar é esse?' && rm.reply_label === 'Respondeu ao story · teste' && rm.story_id === S3);
+ok('story: estranho NÃO responde', !!(await fails(D, "select reply_story($1, 'oi')", [S3])));
+
+await as(D, 'insert into follows (follower_id, followee_id) values (auth.uid(), $1) on conflict do nothing', [A]);
+const gc = (await one(A, "select create_group_chat('Rolê de sexta', array[$1, $2, $3]::uuid[]) c", [B, C, D])).c;
+ok('grupo no direct: entra só quem tem ligação (B ficou de fora)', (await one(null, 'select count(*)::int n from conversation_members where conversation_id=$1', [gc])).n === 3
+  && (await one(null, 'select count(*)::int n from conversation_members where conversation_id=$1 and user_id=$2', [gc, B])).n === 0);
+await as(A, "insert into messages (conversation_id, sender_id, body) values ($1, auth.uid(), 'bora?')", [gc]);
+const inbC = (await one(C, 'select inbox() i')).i.find((c) => c.id === gc);
+ok('grupo no direct: aparece na caixa com nome e rostos', inbC && inbC.isGroup && inbC.title === 'Rolê de sexta' && inbC.memberCount === 3 && inbC.members.length === 2 && inbC.unread);
+ok('grupo no direct: membro manda mensagem', !(await fails(D, "insert into messages (conversation_id, sender_id, body) values ($1, auth.uid(), 'bora!')", [gc])));
+ok('grupo no direct: quem é de fora NÃO lê', (await as(B, 'select * from messages where conversation_id=$1', [gc])).rows.length === 0);
+const before = (await one(null, 'select count(*)::int n from conversation_members where conversation_id=$1', [gc])).n;
+await as(A, 'select add_to_group_chat($1, array[$2]::uuid[])', [gc, '00000000-0000-0000-0000-0000000000ff']);
+ok('grupo no direct: não adiciona quem não existe/sem ligação', (await one(null, 'select count(*)::int n from conversation_members where conversation_id=$1', [gc])).n === before);
+ok('grupo no direct: de fora NÃO adiciona gente', !!(await fails(B, 'select add_to_group_chat($1, array[$2]::uuid[])', [gc, B])));
+const info = (await one(D, 'select conversation_info($1) i', [gc])).i;
+ok('grupo no direct: cabeçalho com membros', info.isGroup && info.members.length === 3);
+ok('grupo no direct: 1:1 continua separado do grupo', (await one(A, 'select start_conversation($1) c', [C])).c !== gc);
+await as(D, 'select leave_conversation($1)', [gc]);
+ok('grupo no direct: sair do grupo', (await one(null, 'select count(*)::int n from conversation_members where conversation_id=$1', [gc])).n === 2);
+ok('grupo no direct: título vazio recusado', !!(await fails(A, "select create_group_chat('  ', array[$1]::uuid[])", [C])));
+
 // ── conteúdo demo (supabase/demo.sql)
 await db.exec(`alter table auth.users add column if not exists instance_id uuid, add column if not exists aud text, add column if not exists role text,
   add column if not exists raw_app_meta_data jsonb, add column if not exists raw_user_meta_data jsonb, add column if not exists updated_at timestamptz;

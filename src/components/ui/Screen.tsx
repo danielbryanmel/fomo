@@ -25,7 +25,7 @@ export function Screen({ children, scroll, edges = ['top'], contentStyle, bleed 
           {children}
         </ScrollView>
       ) : (
-        <View style={[styles.grow, padding, contentStyle]}>{children}</View>
+        <View style={[styles.fill, padding, contentStyle]}>{children}</View>
       )}
     </SafeAreaView>
   );
@@ -34,5 +34,7 @@ export function Screen({ children, scroll, edges = ['top'], contentStyle, bleed 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   grow: { flexGrow: 1 },
+  // flex: 1 + minHeight 0: ocupa só a tela, e as listas de dentro rolam (flexGrow sozinho crescia do tamanho do conteúdo e travava a rolagem)
+  fill: { flex: 1, minHeight: 0 },
   padded: { paddingHorizontal: spacing.lg },
 });

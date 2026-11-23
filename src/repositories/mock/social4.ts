@@ -42,9 +42,9 @@ export const mockCheckins: CheckinsRepository = {
 const PHOTO = (seed: number) => ({ uri: `https://picsum.photos/seed/fomo${seed}/1080/1920` });
 const stories: (Story & { authorId: string; viewers: string[] })[] = [
   { id: 'st-1', authorId: 'u-lia', photo: PHOTO(1), width: 1080, height: 1920, caption: 'esquenta tá on', isDual: true, visibility: 'followers',
-    event: { id: 'e-1', title: 'Baile da Lua' }, createdAt: new Date(Date.now() - 40 * 60_000).toISOString(), expiresAt: new Date(Date.now() + 23 * 3600_000).toISOString(), seen: false, views: null, viewers: [] },
+    event: { id: 'e-1', title: 'Baile da Lua' }, createdAt: new Date(Date.now() - 40 * 60_000).toISOString(), expiresAt: new Date(Date.now() + 23 * 3600_000).toISOString(), seen: false, liked: false, views: null, likes: null, viewers: [] },
   { id: 'st-2', authorId: 'u-teo', photo: PHOTO(2), width: 1080, height: 1920, caption: null, isDual: false, visibility: 'public',
-    event: null, createdAt: new Date(Date.now() - 3 * 3600_000).toISOString(), expiresAt: new Date(Date.now() + 21 * 3600_000).toISOString(), seen: false, views: null, viewers: [] },
+    event: null, createdAt: new Date(Date.now() - 3 * 3600_000).toISOString(), expiresAt: new Date(Date.now() + 21 * 3600_000).toISOString(), seen: false, liked: false, views: null, likes: null, viewers: [] },
 ];
 
 export const mockStories: StoriesRepository = {
@@ -72,7 +72,7 @@ export const mockStories: StoriesRepository = {
     stories.push({
       id: `st-${Date.now()}`, authorId: ME, photo: { uri: input.photo.uri }, width: input.photo.width, height: input.photo.height,
       caption: input.caption, isDual: input.isDual, visibility: input.visibility, event: ev ? { id: ev.id, title: ev.title } : null,
-      createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 24 * 3600_000).toISOString(), seen: true, views: 0, viewers: [],
+      createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 24 * 3600_000).toISOString(), seen: true, liked: false, views: 0, likes: 0, viewers: [],
     });
     onProgress?.(1);
   },
@@ -83,7 +83,20 @@ export const mockStories: StoriesRepository = {
   async viewers(storyId) {
     await delay(120);
     const s = stories.find((x) => x.id === storyId);
-    return s && s.authorId === ME ? s.viewers.map((v) => ({ profile: byId(v), viewedAt: new Date().toISOString() })) : [];
+    return s && s.authorId === ME ? s.viewers.map((v) => ({ profile: byId(v), viewedAt: new Date().toISOString(), liked: false })) : [];
+  },
+  async like(storyId) {
+    const s = stories.find((x) => x.id === storyId);
+    if (!s) return false;
+    s.liked = !s.liked;
+    return s.liked;
+  },
+  async reply(storyId, body) {
+    await delay(200);
+    if (!body.trim()) throw new Error('Escreva uma mensagem.');
+    const s = stories.find((x) => x.id === storyId);
+    if (!s) throw new Error('Story indisponível.');
+    return `cv-story-${s.authorId}`;
   },
   async remove(storyId) {
     const i = stories.findIndex((x) => x.id === storyId && x.authorId === ME);

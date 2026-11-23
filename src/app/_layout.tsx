@@ -91,6 +91,7 @@ export default function RootLayout() {
             <Stack.Screen name="people" options={{ headerShown: true, title: 'Buscar pessoas' }} />
             <Stack.Screen name="connections/[username]" options={{ headerShown: true, title: '' }} />
             <Stack.Screen name="messages/index" options={{ headerShown: true, title: 'Mensagens' }} />
+            <Stack.Screen name="messages/new-group" options={{ headerShown: true, title: 'Novo grupo' }} />
             <Stack.Screen name="messages/[id]" options={{ headerShown: true, title: '' }} />
             <Stack.Screen name="group/new" options={{ headerShown: true, title: 'Novo grupo', presentation: 'modal' }} />
             <Stack.Screen name="group/[id]" options={{ headerShown: true, title: 'Grupo' }} />

@@ -11,7 +11,8 @@ const delay = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 const byId = (id: string) => db.profiles.find((p) => p.id === id);
 let usernameChanges = 0;
 
-const convs: { id: string; members: string[]; lastRead: Record<string, string> }[] = [
+type Conv = { id: string; members: string[]; lastRead: Record<string, string>; title?: string; isGroup?: boolean };
+const convs: Conv[] = [
   { id: 'cv-1', members: [ME, 'u-lia'], lastRead: { [ME]: new Date(0).toISOString() } },
 ];
 const msgs: Message[] = [
@@ -84,22 +85,25 @@ export const mockMessages: MessagesRepository = {
   async inbox() {
     await delay();
     return convs
-      .filter((c) => c.members.includes(ME) && msgs.some((m) => m.conversationId === c.id))
+      .filter((c) => c.members.includes(ME) && (c.isGroup || msgs.some((m) => m.conversationId === c.id)))
       .map((c): ConversationPreview => {
-        const last = msgs.filter((m) => m.conversationId === c.id).at(-1)!;
+        const last = msgs.filter((m) => m.conversationId === c.id).at(-1);
+        const others = c.members.filter((m) => m !== ME);
         return {
-          id: c.id, other: byId(c.members.find((m) => m !== ME)!) ?? null, lastAt: last.createdAt,
-          last: { body: last.body, senderId: last.senderId, createdAt: last.createdAt },
-          unread: last.senderId !== ME && last.createdAt > (c.lastRead[ME] ?? ''),
-          iFollow: db.follows.some((f) => f.followerId === ME && f.followeeId === c.members.find((m) => m !== ME) && f.status === 'accepted'),
-          replied: msgs.some((m) => m.conversationId === c.id && m.senderId === ME),
+          id: c.id, other: c.isGroup ? null : (byId(others[0]!) ?? null), lastAt: last?.createdAt ?? new Date().toISOString(),
+          last: last ? { body: last.body, senderId: last.senderId, createdAt: last.createdAt, replyLabel: last.replyLabel ?? null, senderName: byId(last.senderId)?.username ?? null } : null,
+          unread: !!last && last.senderId !== ME && last.createdAt > (c.lastRead[ME] ?? ''),
+          iFollow: !!c.isGroup || db.follows.some((f) => f.followerId === ME && f.followeeId === others[0] && f.status === 'accepted'),
+          replied: !!c.isGroup || msgs.some((m) => m.conversationId === c.id && m.senderId === ME),
+          isGroup: !!c.isGroup, title: c.title ?? null,
+          members: others.slice(0, 3).map((u) => byId(u)).filter((p): p is UserProfile => !!p), memberCount: c.members.length,
         };
       })
       .sort((a, b) => b.lastAt.localeCompare(a.lastAt));
   },
   async open(userId) {
     await delay(150);
-    let c = convs.find((x) => x.members.length === 2 && x.members.includes(ME) && x.members.includes(userId));
+    let c = convs.find((x) => !x.isGroup && x.members.length === 2 && x.members.includes(ME) && x.members.includes(userId));
     if (!c) {
       c = { id: `cv-${Date.now()}`, members: [ME, userId], lastRead: {} };
       convs.push(c);
@@ -124,6 +128,29 @@ export const mockMessages: MessagesRepository = {
   async markRead(conversationId) {
     const c = convs.find((x) => x.id === conversationId);
     if (c) c.lastRead[ME] = new Date().toISOString();
+  },
+  async info(conversationId) {
+    const c = convs.find((x) => x.id === conversationId);
+    return c ? { id: c.id, isGroup: !!c.isGroup, title: c.title ?? null, members: c.members.map((u) => byId(u)).filter((p): p is UserProfile => !!p) } : null;
+  },
+  async createGroup(title, memberIds) {
+    await delay(200);
+    if (!title.trim()) throw new Error('Dê um nome ao grupo.');
+    if (!memberIds.length) throw new Error('Escolha pelo menos 1 pessoa que você segue ou que te segue.');
+    const c: Conv = { id: `cv-${Date.now()}`, members: [ME, ...memberIds], lastRead: {}, title: title.trim(), isGroup: true };
+    convs.push(c);
+    return c.id;
+  },
+  async addMembers(conversationId, memberIds) {
+    const c = convs.find((x) => x.id === conversationId);
+    if (!c) return 0;
+    const add = memberIds.filter((u) => !c.members.includes(u));
+    c.members.push(...add);
+    return add.length;
+  },
+  async leave(conversationId) {
+    const c = convs.find((x) => x.id === conversationId);
+    if (c) c.members = c.members.filter((u) => u !== ME);
   },
   subscribe(conversationId, onMessage) {
     const set = listeners.get(conversationId) ?? new Set();

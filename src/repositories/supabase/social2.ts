@@ -22,7 +22,7 @@ function check<T>(res: { data: T; error: unknown }): T {
   return res.data;
 }
 
-const toMessage = (r: Row): Message => ({ id: r.id, conversationId: r.conversation_id, senderId: r.sender_id, body: r.body, createdAt: r.created_at });
+const toMessage = (r: Row): Message => ({ id: r.id, conversationId: r.conversation_id, senderId: r.sender_id, body: r.body, createdAt: r.created_at, replyLabel: r.reply_label ?? null, storyId: r.story_id ?? null });
 const toGroup = (j: Row): GroupView => ({
   ...(j as GroupView),
   members: (j.members ?? []).map((m: Row) => ({ status: m.status, profile: toProfile(m.profile) })),
@@ -62,7 +62,11 @@ export const profilesExtra: Pick<ProfilesRepository, 'changeUsername' | 'search'
 export const messagesRepo: MessagesRepository = {
   async inbox() {
     const list = (check(await sb().rpc('inbox')) ?? []) as Row[];
-    return list.map((c): ConversationPreview => ({ id: c.id, lastAt: c.lastAt, unread: !!c.unread, last: c.last ?? null, other: c.other ? toProfile(c.other) : null, iFollow: !!c.iFollow, replied: !!c.replied }));
+    return list.map((c): ConversationPreview => ({
+      id: c.id, lastAt: c.lastAt, unread: !!c.unread, last: c.last ?? null, other: c.other ? toProfile(c.other) : null,
+      iFollow: !!c.iFollow, replied: !!c.replied, isGroup: !!c.isGroup, title: c.title ?? null,
+      members: ((c.members ?? []) as Row[]).map(toProfile), memberCount: c.memberCount ?? 2,
+    }));
   },
   async open(userId) {
     return check(await sb().rpc('start_conversation', { p_other: userId })) as string;
@@ -85,6 +89,19 @@ export const messagesRepo: MessagesRepository = {
     const now = new Date().toISOString();
     await sb().from('conversation_members').update({ last_read_at: now }).eq('conversation_id', conversationId).eq('user_id', me);
     await sb().from('notifications').update({ read_at: now }).eq('type', 'message').eq('entity_id', conversationId).is('read_at', null);
+  },
+  async info(conversationId) {
+    const j = check(await sb().rpc('conversation_info', { p_conv: conversationId })) as Row | null;
+    return j ? { id: j.id, isGroup: !!j.isGroup, title: j.title ?? null, members: ((j.members ?? []) as Row[]).map(toProfile) } : null;
+  },
+  async createGroup(title, memberIds) {
+    return check(await sb().rpc('create_group_chat', { p_title: title.trim(), p_members: memberIds })) as string;
+  },
+  async addMembers(conversationId, memberIds) {
+    return check(await sb().rpc('add_to_group_chat', { p_conv: conversationId, p_members: memberIds })) as number;
+  },
+  async leave(conversationId) {
+    check(await sb().rpc('leave_conversation', { p_conv: conversationId }));
   },
   subscribe(conversationId, onMessage) {
     const ch = sb().channel(`chat:${conversationId}`)

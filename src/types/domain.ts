@@ -301,7 +301,7 @@ export type CommentView = {
 
 export type NotificationType =
   | 'follow' | 'follow_request' | 'follow_accepted' | 'like' | 'comment' | 'achievement' | 'event_approved' | 'moderation'
-  | 'message' | 'group_invite' | 'group_response' | 'event_reminder' | 'group_poll' | 'arrived_home';
+  | 'message' | 'group_invite' | 'group_response' | 'event_reminder' | 'group_poll' | 'arrived_home' | 'story_like';
 
 export type NotificationView = {
   id: UUID;
@@ -346,13 +346,25 @@ export type EventSubmission = {
 
 /* ───────────────────────── Direct e grupos (Social 2) ───────────────────────── */
 
-export type Message = { id: UUID; conversationId: UUID; senderId: UUID; body: string; createdAt: ISODateString };
+export type Message = {
+  id: UUID; conversationId: UUID; senderId: UUID; body: string; createdAt: ISODateString;
+  /** Resposta a story: "Respondeu ao story · legenda". */
+  replyLabel?: string | null;
+  storyId?: UUID | null;
+};
+
+export type ConversationInfo = { id: UUID; isGroup: boolean; title: string | null; members: UserProfile[] };
 
 export type ConversationPreview = {
   id: UUID;
   other: UserProfile | null;
-  last: { body: string; senderId: UUID; createdAt: ISODateString } | null;
+  last: { body: string; senderId: UUID; createdAt: ISODateString; replyLabel?: string | null; senderName?: string | null } | null;
   lastAt: ISODateString;
+  isGroup: boolean;
+  title: string | null;
+  /** Grupo: até 3 rostos (sem você). */
+  members: UserProfile[];
+  memberCount: number;
   unread: boolean;
   /** Eu sigo a outra pessoa. */
   iFollow: boolean;
@@ -407,8 +419,10 @@ export type Story = {
   createdAt: ISODateString;
   expiresAt: ISODateString;
   seen: boolean;
+  liked: boolean;
   /** Só nos meus stories. */
   views: number | null;
+  likes: number | null;
 };
 
 export type StoryGroup = { author: UserProfile; stories: Story[]; hasUnseen: boolean; latestAt: ISODateString };

@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { AlarmClock, House, MessageCircleMore, Users, Vote } from 'lucide-react-native';
+import { AlarmClock, Heart, House, MessageCircleMore, Users, Vote } from 'lucide-react-native';
 import { FomoCommentIcon, FomoLikeIcon } from '@/components/icons/FomoIcons';
 import { Award, BellOff, CalendarCheck, ShieldCheck, UserCheck, UserPlus } from 'lucide-react-native';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
@@ -9,6 +9,7 @@ import { Appear } from '@/components/motion';
 import { Avatar, Button, Screen, Skeleton, StateView, Text, useToast } from '@/components/ui';
 import { useAsync } from '@/hooks/useAsync';
 import { formatRelative } from '@/lib/format';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { repositories } from '@/repositories';
 import { colors, motion, radius, spacing } from '@/theme';
 import type { NotificationType, NotificationView, UserProfile } from '@/types/domain';
@@ -28,6 +29,7 @@ const COPY: Record<NotificationType, string> = {
   event_reminder: 'Seu rolê começa em menos de 2 h. Bora se arrumar?',
   group_poll: 'abriu uma enquete no grupo',
   arrived_home: 'avisou que chegou bem em casa',
+  story_like: 'curtiu seu story',
 };
 
 const ICON: Record<NotificationType, ReactNode> = {
@@ -45,12 +47,14 @@ const ICON: Record<NotificationType, ReactNode> = {
   event_reminder: <AlarmClock size={14} color={colors.text} />,
   group_poll: <Vote size={14} color={colors.text} />,
   arrived_home: <House size={14} color={colors.text} />,
+  story_like: <Heart size={14} color={colors.text} />,
 };
 
 const exit = FadeOut.duration(motion.fast).reduceMotion(ReduceMotion.System);
 const layout = LinearTransition.springify().damping(motion.spring.soft.damping).reduceMotion(ReduceMotion.System);
 
-function open(n: NotificationView) {
+function open(n: NotificationView, meId?: string) {
+  if (n.entityType === 'story') return meId ? router.push({ pathname: '/story/[id]', params: { id: meId } }) : undefined;
   if (n.entityType === 'conversation' && n.entityId) return router.push({ pathname: '/messages/[id]', params: { id: n.entityId } });
   if (n.entityType === 'group' && n.entityId) return router.push({ pathname: '/group/[id]', params: { id: n.entityId } });
   if (n.entityType === 'post' && n.entityId) return router.push({ pathname: '/post/[id]', params: { id: n.entityId } });
@@ -61,6 +65,7 @@ function open(n: NotificationView) {
 
 /** Notificações (tempo real) + solicitações para seguir no topo. */
 export default function NotificationsScreen() {
+  const meId = useAuth().profile?.id;
   const toast = useToast();
   const list = useAsync(() => repositories.social.notifications(), []);
   const requests = useAsync(() => repositories.social.followRequests(), []);
@@ -127,7 +132,7 @@ export default function NotificationsScreen() {
           return (
             <Animated.View layout={layout}>
               <Appear index={index}>
-                <Pressable onPress={() => open(n)} style={({ pressed }) => [styles.row, fresh && styles.fresh, pressed && styles.pressed]} accessibilityRole="button">
+                <Pressable onPress={() => open(n, meId)} style={({ pressed }) => [styles.row, fresh && styles.fresh, pressed && styles.pressed]} accessibilityRole="button">
                   <View>
                     {n.actor ? (
                       <Avatar name={n.actor.displayName} url={n.actor.avatarUrl} seed={n.actor.id} size={44} />

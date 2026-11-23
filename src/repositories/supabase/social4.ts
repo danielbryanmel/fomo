@@ -59,7 +59,7 @@ export const storiesRepo: StoriesRepository = {
         .map((x: Row): Story => ({
           id: x.id, photo: urls.has(x.path) ? { uri: urls.get(x.path)! } : demoPhoto(x.path)!, width: x.width ?? 1080, height: x.height ?? 1920, caption: x.caption ?? null,
           isDual: !!x.isDual, visibility: x.visibility, event: x.event ?? null, createdAt: x.createdAt, expiresAt: x.expiresAt,
-          seen: !!x.seen, views: x.views ?? null,
+          seen: !!x.seen, liked: !!x.liked, views: x.views ?? null, likes: x.likes ?? null,
         })),
     })).filter((g) => g.stories.length > 0);
   },
@@ -87,7 +87,13 @@ export const storiesRepo: StoriesRepository = {
     await sb().rpc('view_story', { p_story: storyId });
   },
   async viewers(storyId) {
-    return ((check(await sb().rpc('story_viewers', { p_story: storyId })) ?? []) as Row[]).map((v) => ({ profile: toProfile(v.profile), viewedAt: v.viewedAt }));
+    return ((check(await sb().rpc('story_viewers', { p_story: storyId })) ?? []) as Row[]).map((v) => ({ profile: toProfile(v.profile), viewedAt: v.viewedAt, liked: !!v.liked }));
+  },
+  async like(storyId) {
+    return check(await sb().rpc('toggle_story_like', { p_story: storyId })) as boolean;
+  },
+  async reply(storyId, body) {
+    return check(await sb().rpc('reply_story', { p_story: storyId, p_body: body.trim() })) as string;
   },
   async remove(storyId) {
     const r = check(await sb().from('stories').select('storage_path').eq('id', storyId).maybeSingle()) as Row | null;

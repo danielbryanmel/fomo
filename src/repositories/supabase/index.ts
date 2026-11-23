@@ -160,7 +160,7 @@ export const supabaseRepositories: Repositories = {
       return toEventView(row, !!saved.data);
     },
     async listReviews(eventId) {
-      const rows = check(await sb().from('reviews').select('*, author:profiles(*)').eq('event_id', eventId).order('created_at', { ascending: false }).limit(30)) as Row[];
+      const rows = check(await sb().from('reviews').select('*, author:profiles!reviews_author_id_fkey(*)').eq('event_id', eventId).order('created_at', { ascending: false }).limit(30)) as Row[];
       return rows.map(toReview);
     },
     async toggleSave(eventId) {
@@ -211,7 +211,7 @@ export const supabaseRepositories: Repositories = {
     },
     async myReview(eventId) {
       const me = await uid();
-      const r = check(await sb().from('reviews').select('*, author:profiles(*)').eq('event_id', eventId).eq('author_id', me).maybeSingle()) as Row | null;
+      const r = check(await sb().from('reviews').select('*, author:profiles!reviews_author_id_fkey(*)').eq('event_id', eventId).eq('author_id', me).maybeSingle()) as Row | null;
       return r ? toReview(r) : null;
     },
     async saveReview(eventId, rating, body) {
@@ -220,7 +220,7 @@ export const supabaseRepositories: Repositories = {
       const q = existing.data
         ? sb().from('reviews').update({ rating, body: body?.trim() || null }).eq('id', existing.data.id)
         : sb().from('reviews').insert({ author_id: me, event_id: eventId, rating, body: body?.trim() || null });
-      const r = check(await q.select('*, author:profiles(*)').single()) as Row;
+      const r = check(await q.select('*, author:profiles!reviews_author_id_fkey(*)').single()) as Row;
       return toReview(r);
     },
   },
@@ -347,7 +347,7 @@ export const supabaseRepositories: Repositories = {
       return row ? relationshipFor(toProfile(row)) : null;
     },
     async listReviews(userId) {
-      const rows = check(await sb().from('reviews').select('*, author:profiles(*)').eq('author_id', userId).order('created_at', { ascending: false }).limit(30)) as Row[];
+      const rows = check(await sb().from('reviews').select('*, author:profiles!reviews_author_id_fkey(*)').eq('author_id', userId).order('created_at', { ascending: false }).limit(30)) as Row[];
       return rows.map(toReview);
     },
     async toggleFollow(userId) {

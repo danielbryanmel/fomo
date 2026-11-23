@@ -1,8 +1,9 @@
 import { router, useFocusEffect } from 'expo-router';
-import { MessageSquareDashed, SquarePen } from 'lucide-react-native';
+import { MessageSquareDashed, SquarePen, Users } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
 import { Appear, PressableScale } from '@/components/motion';
+import { GroupAvatar } from '@/components/messages/GroupAvatar';
 import { Avatar, Button, Chip, Screen, Skeleton, StateView, Text } from '@/components/ui';
 import type { ConversationPreview } from '@/types/domain';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -61,19 +62,23 @@ export default function InboxScreen() {
           contentContainerStyle={styles.pad}
           renderItem={({ item, index }) => {
             const mine = item.last?.senderId === auth.profile?.id;
+            const name = item.isGroup ? (item.title ?? 'Grupo') : (item.other?.username ?? 'conta removida');
+            const who = mine ? 'Você: ' : item.isGroup && item.last?.senderName ? `${item.last.senderName}: ` : '';
+            const preview = item.last ? `${item.last.replyLabel && !item.isGroup ? '↩ story · ' : ''}${item.last.body}` : `${item.memberCount} pessoas · diga oi`;
             return (
               <Appear index={index}>
                 <PressableScale style={[styles.row, item.unread && styles.unread]} scaleTo={0.98}
                   onPress={() => router.push({ pathname: '/messages/[id]', params: { id: item.id } })}
-                  accessibilityRole="button" accessibilityLabel={`Conversa com ${item.other?.displayName ?? 'alguém'}${item.unread ? ', não lida' : ''}`}>
-                  <Avatar name={item.other?.displayName ?? '?'} url={item.other?.avatarUrl ?? null} seed={item.other?.id ?? item.id} size={48} />
+                  accessibilityRole="button" accessibilityLabel={`${item.isGroup ? 'Grupo' : 'Conversa com'} ${name}${item.unread ? ', não lida' : ''}`}>
+                  {item.isGroup ? <GroupAvatar members={item.members} /> : <Avatar name={item.other?.displayName ?? '?'} url={item.other?.avatarUrl ?? null} seed={item.other?.id ?? item.id} size={48} />}
                   <View style={styles.text}>
                     <View style={styles.nameRow}>
-                      <Text variant="bodyStrong" numberOfLines={1} style={styles.shrink}>{item.other?.username ?? 'conta removida'}</Text>
+                      <Text variant="bodyStrong" numberOfLines={1} style={styles.shrink}>{name}</Text>
+                      {item.isGroup ? <Text variant="mono" tone="muted">{item.memberCount}</Text> : null}
                       {isRequest(item) ? <Text variant="mono" tone="muted" style={styles.tag}>solicitação</Text> : null}
                     </View>
                     <Text tone={item.unread ? 'primary' : 'muted'} numberOfLines={1} style={item.unread && styles.bold}>
-                      {mine ? 'Você: ' : ''}{item.last?.body ?? ''}
+                      {who}{preview}
                     </Text>
                   </View>
                   <View style={styles.meta}>
@@ -87,6 +92,7 @@ export default function InboxScreen() {
         />
       )}
       <View style={styles.fab}>
+        <Button label="Novo grupo" variant="secondary" icon={<Users size={18} color={colors.text} />} onPress={() => router.push('/messages/new-group')} />
         <Button label="Nova conversa" icon={<SquarePen size={18} color={colors.text} />} onPress={() => router.push('/people')} />
       </View>
     </Screen>
@@ -106,5 +112,5 @@ const styles = StyleSheet.create({
   bold: { fontWeight: '600' },
   meta: { alignItems: 'flex-end', gap: 6 },
   dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: colors.accentPink },
-  fab: { position: 'absolute', right: spacing.lg, bottom: spacing.xl },
+  fab: { position: 'absolute', right: spacing.lg, bottom: spacing.xl, flexDirection: 'row', gap: spacing.sm },
 });
