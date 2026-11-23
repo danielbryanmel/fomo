@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -106,6 +107,7 @@ function PasswordForm({ mode, setMode, auth }: { mode: 'signUp' | 'signIn'; setM
             onPress={() => { setMode(mode === 'signUp' ? 'signIn' : 'signUp'); setError(null); setInfo(null); }}
           />
           {mode === 'signIn' ? <Button label="Esqueci minha senha" variant="ghost" onPress={() => setMode('reset')} /> : null}
+          {error ? <Button label="Problema para entrar? Avise a gente" variant="ghost" onPress={() => router.push('/feedback')} /> : null}
         </>
       }
     >
