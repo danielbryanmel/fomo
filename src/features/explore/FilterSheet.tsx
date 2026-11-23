@@ -8,7 +8,7 @@ import { colors, radius, spacing } from '@/theme';
 import type { DateFilter, PriceFilter } from '@/types/domain';
 
 export type ExploreFilters = { date: DateFilter; maxDistanceKm: number | null; price: PriceFilter };
-export const DEFAULT_FILTERS: ExploreFilters = { date: 'today', maxDistanceKm: null, price: 'any' };
+export const DEFAULT_FILTERS: ExploreFilters = { date: 'any', maxDistanceKm: null, price: 'any' };
 
 export function activeFilterCount(f: ExploreFilters) {
   return (f.date !== DEFAULT_FILTERS.date ? 1 : 0) + (f.maxDistanceKm ? 1 : 0) + (f.price !== 'any' ? 1 : 0);
