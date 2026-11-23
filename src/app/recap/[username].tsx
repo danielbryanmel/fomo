@@ -21,7 +21,8 @@ function nightKey(p: PostView): string {
 }
 function nightLabel(key: string) {
   const [y, m, d] = key.split('-').map(Number);
-  return new Date(y!, m! - 1, d!).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const t = new Date(y!, m! - 1, d!).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return t.charAt(0).toUpperCase() + t.slice(1); // "Sábado, 21 de novembro" (não "21 De Novembro")
 }
 
 /** Retrospectiva da noite: lugares, fotos e notas de uma noite, num card para compartilhar. */
@@ -94,7 +95,7 @@ export default function RecapScreen() {
               </View>
             </View>
             <Text variant="mono" tone="secondary">a noite de</Text>
-            <Text variant="display" style={styles.cap}>{nightLabel(key)}</Text>
+            <Text variant="display">{nightLabel(key)}</Text>
 
             {photos.length ? (
               <View style={styles.mosaic}>
@@ -157,7 +158,6 @@ const styles = StyleSheet.create({
   chips: { gap: spacing.sm },
   card: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: 'rgba(232,54,140,0.4)' },
   who: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
-  cap: { textTransform: 'capitalize' },
   mosaic: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginVertical: spacing.sm, borderRadius: radius.lg, overflow: 'hidden' },
   tile: { width: '49%', aspectRatio: 1, backgroundColor: colors.surfaceRaised, flexGrow: 1 },
   tileFull: { width: '100%', aspectRatio: 4 / 3 },
