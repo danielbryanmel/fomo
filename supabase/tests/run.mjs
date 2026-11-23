@@ -423,7 +423,29 @@ ok('demo: aparece no "Para você"', (await as(D, "select id from feed('for_you',
 ok('cliente NÃO cria rolê marcado como demo', !!(await fails(A, `insert into events (title, category_id, starts_at, latitude, longitude, created_by, is_demo) values ('Fake demo', '${cat}', now() + interval '1 day', -23.55, -46.65, auth.uid(), true)`)));
 ok('cliente NÃO roda demo_refresh/demo_purge', !!(await fails(A, 'select demo_refresh()')) && !!(await fails(A, 'select demo_purge()')));
 ok('cliente NÃO se marca como demo', !!(await fails(A, 'update profiles set is_demo = true where id = auth.uid()')));
+await db.exec(readFileSync(join(root, 'demo_social.sql'), 'utf8'));
+await db.exec(readFileSync(join(root, 'demo_social.sql'), 'utf8')); // idempotente
+const BAILE = 'de0e0000-0000-4000-8000-000000000001';
+const trayB = (await one(B, 'select stories_tray() t')).t;
+ok('demo social: pessoa real vê stories dos demo que segue', trayB.filter((g) => g.author.is_demo).length >= 4 && trayB.every((g) => g.stories.every((s) => new Date(s.expiresAt) > new Date())));
+ok('demo social: presença do Baile aparece (≥3)', (await one(B, 'select event_presence($1) p', [BAILE])).p.count >= 3);
+const frB = (await one(B, 'select event_friends($1) f', [BAILE])).f.map((p) => p.username);
+ok('demo social: "quem tá indo" mostra público, esconde anônimo', frB.includes('lia.demo') && !frB.includes('nina.demo'), frB.join(','));
+const sugB = (await one(C, 'select suggested_people(20) s')).s;
+ok('demo social: Nina aparece como "Segue você"', sugB.some((x) => x.profile.username === 'nina.demo' && x.reason === 'Segue você'));
+const inbB = (await one(B, 'select inbox() i')).i;
+ok('demo social: direct com 1 de quem sigo e 1 solicitação', inbB.filter((c) => c.other?.is_demo).length === 2 && inbB.some((c) => c.iFollow && c.other.username === 'lia.demo') && inbB.some((c) => !c.iFollow && !c.replied && c.other.username === 'nina.demo'));
+const grB = (await one(B, 'select my_groups() g')).g.filter((x) => x.name === 'Sextou no Baile')[0];
+ok('demo social: convite no grupo com enquete', grB && grB.myStatus === 'invited' && grB.polls.length === 1 && grB.polls[0].votes.join() === '2,1,0');
+ok('demo social: convidado ainda NÃO vê localização', (await one(B, "select group_locations_json('de06a000-0000-4000-8000-000000000001') l")).l.length === 0);
+await as(B, "select respond_group('de06a000-0000-4000-8000-000000000001', 'going')");
+ok('demo social: ao confirmar, vê Caio e Bia no mapa do grupo', (await one(B, "select group_locations_json('de06a000-0000-4000-8000-000000000001') l")).l.length === 2);
+await db.query('select demo_refresh()');
+ok('demo social: refresh mantém stories válidos', (await one(null, "select count(*)::int n from stories where expires_at > now() and author_id in (select id from profiles where is_demo)")).n === 8);
 await db.query('select demo_purge()');
+ok('demo_purge remove social (conversas, grupos, stories, follows)', (await one(null, `select (select count(*) from stories where id::text like 'de05f%')::int + (select count(*) from groups where id::text like 'de06a%')::int
+  + (select count(*) from messages m join profiles p on p.id = m.sender_id where p.is_demo)::int
+  + (select count(*) from follows where followee_id::text like 'de000000%' or follower_id::text like 'de000000%')::int n`)).n === 0);
 ok('demo_purge remove tudo', (await one(null, 'select (select count(*) from profiles where is_demo)::int + (select count(*) from events where is_demo)::int + (select count(*) from posts where is_demo)::int n')).n === 0);
 
 console.log(results.join('\n'));

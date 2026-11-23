@@ -227,7 +227,12 @@ export const supabaseRepositories: Repositories = {
 
   live: {
     async status(eventId) {
-      return toLive(check(await sb().rpc('live_status', { p_event_id: eventId })) as Row);
+      // sem sessão (ou sessão expirando) o banco nega: mostra "sem relatos" em vez de erro
+      const { data: s } = await sb().auth.getSession();
+      if (!s.session) return toLive({ eventId, reportsCount: 0 });
+      const res = await sb().rpc('live_status', { p_event_id: eventId });
+      if (res.error && /permission|jwt|401/i.test(res.error.message)) return toLive({ eventId, reportsCount: 0 });
+      return toLive(check(res) as Row);
     },
     async submit(input) {
       const res = check(

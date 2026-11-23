@@ -97,7 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase.auth.signUp(creds);
         if (error) {
           const m = error.message.toLowerCase();
-          if (m.includes('already') || m.includes('registered')) throw new Error('Esse e-mail já tem conta. Toque em "Já tenho conta".');
+          if (m.includes('already') || m.includes('registered')) {
+            // quem já tem conta e tocou em "Criar conta": tenta entrar com a mesma senha
+            const again = await supabase.auth.signInWithPassword(creds);
+            if (!again.error) return 'ok';
+            throw new Error('Esse e-mail já tem conta, mas a senha não confere. Use "Esqueci a senha" ou entre com a senha certa.');
+          }
           if (m.includes('password')) throw new Error('Senha fraca: use pelo menos 8 caracteres, com letras e números.');
           if (m.includes('rate')) throw new Error('Muitas tentativas. Aguarde um minuto.');
           if (m.includes('not authorized') || m.includes('email')) throw new Error('Cadastro por e-mail indisponível agora. Avise quem te convidou.');

@@ -13,4 +13,5 @@ const DEMO: Record<string, number> = {
 };
 
 export const isDemoPath = (path: string) => path.startsWith('demo/');
-export const demoPhoto = (path: string): number | undefined => DEMO[path];
+/** Aceita sufixo "#…" (stories demo reaproveitam a mesma foto com caminhos únicos). */
+export const demoPhoto = (path: string): number | undefined => DEMO[path.split('#')[0]!];

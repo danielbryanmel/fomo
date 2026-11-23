@@ -3,6 +3,7 @@
  * Autorização inteira no banco (RLS + RPCs). Aqui só consultas, upload e mapeamento.
  */
 import * as Crypto from 'expo-crypto';
+import { demoPhoto, isDemoPath } from '@/lib/demoPhotos';
 import { requireSupabase } from '@/lib/supabase/client';
 import type { EventPresence, GroupLocation, PersonSuggestion, Story, StoryGroup } from '@/types/domain';
 import type { CheckinsRepository, GroupsRepository, ProfilesRepository, StoriesRepository } from '../types';
@@ -43,7 +44,7 @@ export const storiesRepo: StoriesRepository = {
     const { data: s } = await sb().auth.getSession();
     if (!s.session) return [];
     const groups = (check(await sb().rpc('stories_tray')) ?? []) as Row[];
-    const paths = groups.flatMap((g) => (g.stories ?? []).map((x: Row) => x.path as string));
+    const paths = groups.flatMap((g) => (g.stories ?? []).map((x: Row) => x.path as string)).filter((p) => !isDemoPath(p));
     const urls = new Map<string, string>();
     if (paths.length) {
       const { data } = await sb().storage.from('post-media').createSignedUrls(paths, STORY_URL_TTL);
@@ -54,9 +55,9 @@ export const storiesRepo: StoriesRepository = {
       hasUnseen: !!g.hasUnseen,
       latestAt: g.latestAt,
       stories: (g.stories ?? [])
-        .filter((x: Row) => urls.has(x.path))
+        .filter((x: Row) => urls.has(x.path) || demoPhoto(x.path) !== undefined)
         .map((x: Row): Story => ({
-          id: x.id, photo: { uri: urls.get(x.path)! }, width: x.width ?? 1080, height: x.height ?? 1920, caption: x.caption ?? null,
+          id: x.id, photo: urls.has(x.path) ? { uri: urls.get(x.path)! } : demoPhoto(x.path)!, width: x.width ?? 1080, height: x.height ?? 1920, caption: x.caption ?? null,
           isDual: !!x.isDual, visibility: x.visibility, event: x.event ?? null, createdAt: x.createdAt, expiresAt: x.expiresAt,
           seen: !!x.seen, views: x.views ?? null,
         })),

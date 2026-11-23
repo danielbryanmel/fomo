@@ -41,9 +41,26 @@ function Shell({ subtitle, children, footer }: { subtitle: string; children: Rea
   );
 }
 
+const HAS_ACCOUNT_KEY = 'fomo.hasAccount.v1';
+/** Quem já entrou neste aparelho volta direto para "Entrar" (antes caía em "Criar conta" e travava). */
+function hadAccount() {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem(HAS_ACCOUNT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function rememberAccount() {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(HAS_ACCOUNT_KEY, '1');
+  } catch {
+    /* ignora */
+  }
+}
+
 function PasswordLogin() {
   const auth = useAuth();
-  const [mode, setMode] = useState<'signUp' | 'signIn' | 'reset'>('signUp');
+  const [mode, setMode] = useState<'signUp' | 'signIn' | 'reset'>(() => (hadAccount() ? 'signIn' : 'signUp'));
   if (mode === 'reset') return <ResetPassword onBack={() => setMode('signIn')} />;
   return <PasswordForm mode={mode} setMode={setMode} auth={auth} />;
 }
@@ -66,8 +83,12 @@ function PasswordForm({ mode, setMode, auth }: { mode: 'signUp' | 'signIn'; setM
     try {
       const r = await auth.passwordAuth(mode, email, password);
       if (r === 'confirm') setInfo('Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre.');
+      else rememberAccount();
     } catch (e) {
-      setError((e as Error).message);
+      const msg = (e as Error).message;
+      setError(msg);
+      // e-mail já cadastrado com outra senha: muda para "Entrar" para mostrar "Esqueci minha senha"
+      if (mode === 'signUp' && /já tem conta/.test(msg)) setMode('signIn');
     } finally {
       setBusy(false);
     }
