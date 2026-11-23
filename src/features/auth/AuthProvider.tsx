@@ -23,6 +23,9 @@ type AuthCtx = {
   verifyCode: (email: string, code: string) => Promise<void>;
   /** Entrar ou criar conta com senha. Retorna 'confirm' se o projeto exigir confirmação por e-mail. */
   passwordAuth: (mode: 'signIn' | 'signUp', email: string, password: string) => Promise<'ok' | 'confirm'>;
+  /** Recuperar senha por código de 6 dígitos (template "Reset password" com {{ .Token }}). */
+  sendResetCode: (email: string) => Promise<void>;
+  resetWithCode: (email: string, code: string, newPassword: string) => Promise<void>;
   claimUsername: (username: string, displayName: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -101,6 +104,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw new Error('Não foi possível criar a conta agora.');
         }
         return data.session ? 'ok' : 'confirm';
+      },
+      async sendResetCode(email) {
+        if (!supabase) return;
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase());
+        if (error) {
+          const m = error.message.toLowerCase();
+          if (m.includes('rate')) throw new Error('Muitas tentativas. Aguarde um minuto.');
+          if (m.includes('not authorized') || m.includes('smtp') || m.includes('sending')) {
+            throw new Error('A recuperação por e-mail ainda não está ativa nesta versão de testes. Fale com quem te convidou.');
+          }
+          throw new Error('Não foi possível enviar o código agora.');
+        }
+      },
+      async resetWithCode(email, code, newPassword) {
+        if (!supabase) return;
+        const v = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code.trim(), type: 'recovery' });
+        if (v.error) throw new Error('Código inválido ou expirado.');
+        const u = await supabase.auth.updateUser({ password: newPassword });
+        if (u.error) throw new Error(/password/i.test(u.error.message) ? 'Senha fraca: use 8+ caracteres com letras e números.' : 'Não foi possível trocar a senha.');
       },
       async claimUsername(username, displayName) {
         if (!supabase) return;

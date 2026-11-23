@@ -7,7 +7,29 @@
   "cleanUrls": false,
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/event/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|Pinterest|Applebot|Googlebot|bingbot|redditbot).*"
+        }
+      ],
+      "destination": "/api/og?type=event&id=:id"
+    },
+    {
+      "source": "/post/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|Slackbot|Discordbot|LinkedInBot|SkypeUriPreview|Pinterest|Applebot|Googlebot|bingbot|redditbot).*"
+        }
+      ],
+      "destination": "/api/og?type=post&id=:id"
+    },
+    {
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ],

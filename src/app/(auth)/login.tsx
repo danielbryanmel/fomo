@@ -43,7 +43,12 @@ function Shell({ subtitle, children, footer }: { subtitle: string; children: Rea
 
 function PasswordLogin() {
   const auth = useAuth();
-  const [mode, setMode] = useState<'signUp' | 'signIn'>('signUp');
+  const [mode, setMode] = useState<'signUp' | 'signIn' | 'reset'>('signUp');
+  if (mode === 'reset') return <ResetPassword onBack={() => setMode('signIn')} />;
+  return <PasswordForm mode={mode} setMode={setMode} auth={auth} />;
+}
+
+function PasswordForm({ mode, setMode, auth }: { mode: 'signUp' | 'signIn'; setMode: (m: 'signUp' | 'signIn' | 'reset') => void; auth: ReturnType<typeof useAuth> }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
@@ -79,6 +84,7 @@ function PasswordLogin() {
             variant="ghost"
             onPress={() => { setMode(mode === 'signUp' ? 'signIn' : 'signUp'); setError(null); setInfo(null); }}
           />
+          {mode === 'signIn' ? <Button label="Esqueci minha senha" variant="ghost" onPress={() => setMode('reset')} /> : null}
         </>
       }
     >
@@ -117,6 +123,58 @@ function PasswordLogin() {
       ) : null}
       {error ? <Text tone="danger" align="center" accessibilityRole="alert">{error}</Text> : null}
       {info ? <Text tone="live" align="center" accessibilityRole="alert">{info}</Text> : null}
+    </Shell>
+  );
+}
+
+function ResetPassword({ onBack }: { onBack: () => void }) {
+  const auth = useAuth();
+  const [step, setStep] = useState<'email' | 'code'>('email');
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const strong = password.length >= 8 && /[a-zA-Z]/.test(password) && /\d/.test(password);
+
+  async function run(fn: () => Promise<void>) {
+    setBusy(true);
+    setError(null);
+    try {
+      await fn();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Shell
+      subtitle={step === 'email' ? 'Mandamos um código de 6 dígitos para o seu e-mail.' : `Digite o código enviado para ${email.trim()} e a nova senha.`}
+      footer={
+        <>
+          {step === 'email' ? (
+            <Button label="Enviar código" fullWidth loading={busy} disabled={!isEmail(email)} onPress={() => run(async () => { await auth.sendResetCode(email); setStep('code'); })} />
+          ) : (
+            <Button label="Trocar senha e entrar" fullWidth loading={busy} disabled={code.length !== 6 || !strong} onPress={() => run(() => auth.resetWithCode(email, code, password))} />
+          )}
+          <Button label="Voltar para entrar" variant="ghost" onPress={onBack} />
+        </>
+      }
+    >
+      {step === 'email' ? (
+        <TextInput value={email} onChangeText={setEmail} placeholder="voce@email.com" placeholderTextColor={colors.textMuted} keyboardType="email-address"
+          autoCapitalize="none" autoComplete="email" textContentType="emailAddress" style={styles.input} accessibilityLabel="E-mail" />
+      ) : (
+        <>
+          <TextInput value={code} onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 6))} placeholder="000000" placeholderTextColor={colors.textMuted}
+            keyboardType="number-pad" autoComplete="one-time-code" textContentType="oneTimeCode" style={[styles.input, styles.code]} accessibilityLabel="Código de 6 dígitos" />
+          <TextInput value={password} onChangeText={setPassword} placeholder="Nova senha (8+ com letras e números)" placeholderTextColor={colors.textMuted}
+            secureTextEntry autoCapitalize="none" autoComplete="new-password" textContentType="newPassword" style={styles.input} accessibilityLabel="Nova senha" />
+        </>
+      )}
+      {error ? <Text tone="danger" align="center" accessibilityRole="alert">{error}</Text> : null}
     </Shell>
   );
 }
