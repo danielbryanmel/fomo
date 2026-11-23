@@ -13,3 +13,11 @@ export function formatHours(e: Pick<FomoEvent, 'startsAt' | 'endsAt'>, now = Dat
   if (Date.parse(e.startsAt) <= now && e.endsAt) return `até ${h(e.endsAt)}`;
   return e.endsAt ? `${h(e.startsAt)}–${h(e.endsAt)}` : `a partir das ${h(e.startsAt)}`;
 }
+
+/** Janela do check-in (igual ao banco): de 3 h antes do início até 2 h depois do fim. */
+export function checkinOpen(e: Pick<FomoEvent, 'status' | 'startsAt' | 'endsAt'>, at = Date.now()) {
+  if (e.status === 'cancelled' || e.status === 'pending') return false;
+  const start = new Date(e.startsAt).getTime();
+  const end = e.endsAt ? new Date(e.endsAt).getTime() : start + 10 * 3600_000;
+  return at >= start - 3 * 3600_000 && at <= end + 2 * 3600_000;
+}

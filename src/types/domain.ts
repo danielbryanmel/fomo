@@ -53,6 +53,8 @@ export type FollowStatus = 'pending' | 'accepted';
 
 export type CheckInStatus = 'declared' | 'verified';
 export type ContentVisibility = 'public' | 'followers' | 'private';
+/** Check-in: 'friends' = vocês se seguem; 'private' = anônimo (só conta no número do rolê). */
+export type CheckinVisibility = 'public' | 'friends' | 'followers' | 'private';
 
 /**
  * Valores previstos para verificationMethod (texto livre no tipo, validado no backend):
@@ -299,7 +301,7 @@ export type CommentView = {
 
 export type NotificationType =
   | 'follow' | 'follow_request' | 'follow_accepted' | 'like' | 'comment' | 'achievement' | 'event_approved' | 'moderation'
-  | 'message' | 'group_invite' | 'group_response' | 'event_reminder' | 'group_poll';
+  | 'message' | 'group_invite' | 'group_response' | 'event_reminder' | 'group_poll' | 'arrived_home';
 
 export type NotificationView = {
   id: UUID;
@@ -318,7 +320,7 @@ export type ProfileSettings = {
   city: string | null;
   avatarUrl: string | null;
   isPrivate: boolean;
-  defaultCheckinVisibility: ContentVisibility;
+  defaultCheckinVisibility: CheckinVisibility;
   isModerator: boolean;
   /** Trocas de @ gratuitas restantes (1 no total). */
   usernameChangesLeft: number;
@@ -379,3 +381,42 @@ export type GroupPoll = {
   createdBy: UUID;
   createdAt: ISODateString;
 };
+
+/* ───────────────────────── Social 4: check-in seguro, stories, sugestões ───────────────────────── */
+
+export type EventPresence = {
+  /** Número de check-ins — só a partir de 3 (abaixo disso, ninguém é identificável). */
+  count: number | null;
+  few: boolean;
+  me: { visibility: CheckinVisibility; revealAt: ISODateString | null; status: 'declared' | 'verified'; createdAt: ISODateString } | null;
+};
+
+export type StoryVisibility = 'public' | 'followers' | 'friends';
+
+export type Story = {
+  id: UUID;
+  photo: PhotoSource;
+  width: number;
+  height: number;
+  caption: string | null;
+  isDual: boolean;
+  visibility: StoryVisibility;
+  event: { id: UUID; title: string } | null;
+  createdAt: ISODateString;
+  expiresAt: ISODateString;
+  seen: boolean;
+  /** Só nos meus stories. */
+  views: number | null;
+};
+
+export type StoryGroup = { author: UserProfile; stories: Story[]; hasUnseen: boolean; latestAt: ISODateString };
+
+export type CreateStoryInput = {
+  photo: LocalPhoto;
+  eventId: UUID | null;
+  caption: string | null;
+  visibility: StoryVisibility;
+  isDual: boolean;
+};
+
+export type PersonSuggestion = { profile: UserProfile; reason: string };

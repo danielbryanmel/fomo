@@ -22,6 +22,7 @@ import type { Repositories } from '../types';
 import type { CommentView, NotificationView, ProfileSettings } from '@/types/domain';
 import { computeLiveStatus, isHappeningNow, mockLive } from './live';
 import { mockGroups, mockMessages, mockProfilesExtra } from './social2';
+import { mockCheckins, mockGroupsSafety, mockStories, mockSuggest } from './social4';
 
 const ME = db.CURRENT_USER_ID;
 const PAGE_SIZE = 5;
@@ -418,10 +419,13 @@ export const mockRepositories: Repositories = {
       await delay(200);
     },
     ...mockProfilesExtra,
+    ...mockSuggest,
   },
 
   messages: mockMessages,
-  groups: mockGroups,
+  groups: { ...mockGroups, ...mockGroupsSafety },
+  checkins: mockCheckins,
+  stories: mockStories,
 
   social: {
     async listComments(postId) {

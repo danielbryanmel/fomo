@@ -19,7 +19,9 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="FOMO" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- "black" (e não black-translucent): no iPhone em modo app, o translúcido deixa uma faixa
+         vazia embaixo (a tela fica com a altura da barra de status a menos). -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
     <!-- Prévia ao compartilhar o link (WhatsApp etc.) -->
     <meta property="og:type" content="website" />
@@ -32,6 +34,8 @@
 
     <style id="expo-reset">
       html, body { height: 100%; background: #0A0A0C; }
+      /* modo app (tela inicial): ocupa a tela inteira, inclusive no iPhone com Dynamic Island */
+      @media all and (display-mode: standalone) { html, body, #root { height: 100dvh; min-height: 100dvh; } }
       body { overflow: hidden; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
       #root { display: flex; height: 100%; flex: 1; }
       /* evita o "pull to refresh" e o bounce do Safari puxando a página inteira */

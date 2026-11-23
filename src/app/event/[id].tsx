@@ -6,6 +6,7 @@ import { type ReactNode, useCallback, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FriendsGoing } from '@/components/event/FriendsGoing';
+import { PresenceRow } from '@/components/event/PresenceRow';
 import { LiveStatusCard } from '@/components/live/LiveStatusCard';
 import { NightChart } from '@/components/live/NightChart';
 import { StatTile } from '@/components/live/StatTile';
@@ -15,7 +16,7 @@ import { Appear } from '@/components/motion';
 import { Ambient, Avatar, Button, Screen, Skeleton, StateView, Text, useToast } from '@/components/ui';
 import { MUSIC_LABEL, QUEUE_HINT, QUEUE_LABEL, VIBE_LABEL } from '@/config/live';
 import { useAsync } from '@/hooks/useAsync';
-import { formatHours, isHappeningNow } from '@/lib/events';
+import { checkinOpen, formatHours, isHappeningNow } from '@/lib/events';
 import { openDirections, openExternal, publicUrl, shareContent } from '@/lib/external';
 import { formatEventDate, formatPrice, formatRelative } from '@/lib/format';
 import { repositories } from '@/repositories';
@@ -38,6 +39,10 @@ export default function EventDetailScreen() {
   }, [refreshReviews]));
   const posts = useAsync(() => repositories.posts.listByEvent(id), [id]);
   const friends = useAsync(() => repositories.groups.friendsGoing(id).catch(() => []), [id]);
+  const presence = useAsync(() => repositories.checkins.presence(id).catch(() => null), [id]);
+  // volta do check-in já atualizado
+  const refreshPresence = presence.refresh;
+  useFocusEffect(useCallback(() => { void refreshPresence(); }, [refreshPresence]));
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -104,6 +109,7 @@ export default function EventDetailScreen() {
             </View>
           ) : null}
 
+          {checkinOpen(e) ? <PresenceRow eventId={e.id} presence={presence.data ?? null} /> : null}
           {!ended && friends.data?.length ? <FriendsGoing people={friends.data} /> : null}
 
           <View style={styles.grid}>

@@ -196,7 +196,7 @@ export const blocks = new Set<string>();
 /** Configurações editáveis do usuário atual (mock). Demo: é moderador para mostrar a fila. */
 export const mySettings = {
   city: 'São Paulo' as string | null,
-  defaultCheckinVisibility: 'followers' as 'public' | 'followers' | 'private',
+  defaultCheckinVisibility: 'followers' as 'public' | 'followers' | 'friends' | 'private',
   isModerator: true,
 };
 

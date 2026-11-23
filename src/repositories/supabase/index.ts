@@ -10,6 +10,7 @@ import type { CommentView, NotificationView, PostPhoto, PostView, ProfileSetting
 import type { Repositories } from '../types';
 import { demoPhoto, isDemoPath } from '@/lib/demoPhotos';
 import { groupsRepo, messagesRepo, profilesExtra } from './social2';
+import { checkinsRepo, groupsSafety, profilesSuggest, storiesRepo } from './social4';
 import { friendlyError, presenceOf, toCategory, toEventView, toLive, toMapEvent, toPost, toProfile } from './mappers';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -391,10 +392,13 @@ export const supabaseRepositories: Repositories = {
       if (res.error && !/duplicate|23505/.test(res.error.message)) throw friendlyError(res.error);
     },
     ...profilesExtra,
+    ...profilesSuggest,
   },
 
   messages: messagesRepo,
-  groups: groupsRepo,
+  groups: { ...groupsRepo, ...groupsSafety },
+  checkins: checkinsRepo,
+  stories: storiesRepo,
 
   social: {
     async listComments(postId) {

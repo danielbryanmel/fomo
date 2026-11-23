@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { CalendarPlus, Camera, ChevronRight, ImagePlus } from 'lucide-react-native';
+import { Aperture, CalendarPlus, Camera, ChevronRight, ImagePlus } from 'lucide-react-native';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Ambient, Screen, Text } from '@/components/ui';
@@ -26,8 +26,9 @@ export default function PublishScreen() {
         <ChevronRight size={22} color={colors.textSecondary} />
       </Pressable>
 
+      <Row icon={<Aperture size={22} color={colors.accentPink} />} title="Story de 24 h" body="Câmera dupla: o rolê e sua selfie numa foto só." onPress={() => router.push('/story/new')} />
       <Row icon={<Camera size={22} color={colors.text} />} title="Tirar foto agora" body="Abre a câmera e já cria a publicação." onPress={() => router.push({ pathname: '/compose', params: { source: 'camera' } })} />
-      <Row icon={<CalendarPlus size={22} color={colors.accentPurple} />} title="Divulgar um evento futuro" body="Passa por moderação antes de aparecer no mapa. Em breve." disabled />
+      <Row icon={<CalendarPlus size={22} color={colors.accentPurple} />} title="Divulgar um evento futuro" body="Passa por moderação antes de aparecer no mapa." onPress={() => router.push('/suggest')} />
     </Screen>
   );
 }

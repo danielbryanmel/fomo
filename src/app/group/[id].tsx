@@ -1,5 +1,5 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { MapPinned, UserPlus, Users } from 'lucide-react-native';
+import { House, MapPinned, UserPlus, Users } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { FriendPicker } from '@/components/group/FriendPicker';
@@ -28,6 +28,18 @@ export default function GroupScreen() {
   if (!group.data) return <Screen><StateView icon={<Users size={26} color={colors.textSecondary} />} title="Grupo indisponível" description="Você não faz parte dele, ou ele foi apagado." /></Screen>;
   const g = group.data;
 
+  const started = Date.now() >= new Date(g.event.startsAt).getTime();
+  const inIt = g.myStatus === 'going' || g.myStatus === 'maybe';
+
+  async function arrived() {
+    try {
+      const n = await repositories.groups.arrivedHome(g.id);
+      toast(n ? `Avisamos ${n} ${n === 1 ? 'pessoa' : 'pessoas'} do grupo que você chegou bem` : 'Você já avisou o grupo há pouco', 'success');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Não foi possível avisar agora.', 'error');
+    }
+  }
+
   async function sendInvites() {
     try {
       const n = await repositories.groups.invite(g.id, picked);
@@ -51,6 +63,9 @@ export default function GroupScreen() {
             <Text variant="mono" tone="secondary">{g.event.title}{g.event.venueName ? ` · ${g.event.venueName}` : ''}</Text>
             <Text variant="headline" style={styles.big}>{g.counts.going} {g.counts.going === 1 ? 'pessoa confirmada' : 'pessoas confirmadas'}</Text>
             <RespondButtons group={g} onChange={(x) => group.setData(() => x)} />
+            {inIt && started ? (
+              <Button label="Cheguei bem em casa" icon={<House size={16} color={colors.text} />} onPress={arrived} fullWidth />
+            ) : null}
             <View style={styles.actions}>
               <Button label="Ver rolê" variant="secondary" icon={<MapPinned size={16} color={colors.text} />} onPress={() => router.push({ pathname: '/event/[id]', params: { id: g.event.id } })} />
               {g.myStatus === 'going' ? (

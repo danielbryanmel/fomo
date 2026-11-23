@@ -28,6 +28,11 @@ import type {
   GroupStatus,
   GroupView,
   Message,
+  CheckinVisibility,
+  CreateStoryInput,
+  EventPresence,
+  PersonSuggestion,
+  StoryGroup,
 } from '@/types/domain';
 
 /**
@@ -129,6 +134,23 @@ export interface ProfilesRepository {
   following(userId: string): Promise<UserProfile[]>;
   /** Tira alguém dos MEUS seguidores. */
   removeFollower(userId: string): Promise<void>;
+  /** Sugestões de amizade com o motivo ("Segue você", "2 amigos em comum"...). */
+  suggestions(limit?: number): Promise<PersonSuggestion[]>;
+}
+
+export interface CheckinsRepository {
+  presence(eventId: string): Promise<EventPresence>;
+  /** revealMinutes > 0: ninguém vê até lá (a presença conta no número na hora). */
+  checkIn(eventId: string, visibility: CheckinVisibility, revealMinutes: number): Promise<EventPresence>;
+  checkOut(eventId: string): Promise<void>;
+}
+
+export interface StoriesRepository {
+  tray(): Promise<StoryGroup[]>;
+  create(input: CreateStoryInput, onProgress?: (p: number) => void): Promise<void>;
+  view(storyId: string): Promise<void>;
+  viewers(storyId: string): Promise<{ profile: UserProfile; viewedAt: string }[]>;
+  remove(storyId: string): Promise<void>;
 }
 
 export interface MessagesRepository {
@@ -153,6 +175,8 @@ export interface GroupsRepository {
   vote(pollId: string, option: number): Promise<void>;
   /** Pessoas que eu sigo e que vão ao rolê (só o que eu já poderia ver). */
   friendsGoing(eventId: string): Promise<UserProfile[]>;
+  /** "Cheguei bem": avisa o grupo. Devolve quantas pessoas foram avisadas (0 = já tinha avisado). */
+  arrivedHome(groupId: string): Promise<number>;
 }
 
 export interface SocialRepository {
@@ -176,4 +200,6 @@ export type Repositories = {
   social: SocialRepository;
   messages: MessagesRepository;
   groups: GroupsRepository;
+  checkins: CheckinsRepository;
+  stories: StoriesRepository;
 };

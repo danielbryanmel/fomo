@@ -12,12 +12,12 @@ import { pickAvatar } from '@/features/compose/photos';
 import { useAsync } from '@/hooks/useAsync';
 import { repositories } from '@/repositories';
 import { colors, radius, spacing } from '@/theme';
-import type { ContentVisibility, ProfileSettings } from '@/types/domain';
+import type { CheckinVisibility, ProfileSettings } from '@/types/domain';
 
-const VIS: { key: ContentVisibility; label: string }[] = [
+const VIS: { key: CheckinVisibility; label: string }[] = [
   { key: 'public', label: 'Todos' },
-  { key: 'followers', label: 'Seguidores' },
-  { key: 'private', label: 'Só eu' },
+  { key: 'friends', label: 'Amigos' },
+  { key: 'private', label: 'Anônimo' },
 ];
 
 /** Editar perfil + privacidade + atalhos (sugerir rolê, moderação, sair). */
@@ -116,7 +116,7 @@ export default function SettingsScreen() {
             onChange={(v) => set('isPrivate', v)}
           />
           <View style={styles.card}>
-            <OptionGrid label="quem vê sua presença em rolês (padrão)" options={VIS} value={form.defaultCheckinVisibility} onChange={(v) => set('defaultCheckinVisibility', v)} />
+            <OptionGrid label="quem vê seu check-in (padrão) · anônimo ainda conta no rolê" options={VIS} value={form.defaultCheckinVisibility} onChange={(v) => set('defaultCheckinVisibility', v)} />
             <Text variant="caption" tone="muted">Nunca mostramos sua localização em tempo real. Isto vale para check-ins novos.</Text>
           </View>
         </Appear>

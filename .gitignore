@@ -46,3 +46,4 @@ dist-preview/
 
 # links locais de teste
 supabase/tests/node_modules
+.mock-dist/

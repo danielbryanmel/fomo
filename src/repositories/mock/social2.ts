@@ -133,7 +133,7 @@ export const mockMessages: MessagesRepository = {
   },
 };
 
-export const mockGroups: GroupsRepository = {
+export const mockGroups: Omit<GroupsRepository, 'arrivedHome'> = {
   async mine() {
     await delay();
     return groups.filter((g) => g.members.has(ME) && g.members.get(ME) !== 'declined').map(groupView);

@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Appear } from '@/components/motion';
 import { PersonRow } from '@/components/profile/PersonRow';
+import { FollowButton } from '@/components/profile/Suggestions';
+import { useAsync } from '@/hooks/useAsync';
 import { Screen, StateView, Text } from '@/components/ui';
 import { repositories } from '@/repositories';
 import { colors, radius, spacing } from '@/theme';
@@ -13,6 +15,7 @@ export default function PeopleScreen() {
   const [q, setQ] = useState('');
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<UserProfile[] | null>(null);
+  const suggestions = useAsync(() => repositories.profiles.suggestions(30).catch(() => []), []);
 
   useEffect(() => {
     const term = q.trim();
@@ -45,7 +48,6 @@ export default function PeopleScreen() {
         <TextInput
           value={q}
           onChangeText={setQ}
-          autoFocus
           placeholder="Buscar por @ ou nome"
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
@@ -58,7 +60,19 @@ export default function PeopleScreen() {
         ) : null}
       </View>
 
-      {results === null ? (
+      {results === null && suggestions.data?.length ? (
+        <FlatList
+          data={suggestions.data}
+          keyExtractor={(s) => s.profile.id}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item, index }) => (
+            <Appear index={index < 8 ? index : 0}>
+              <PersonRow person={item.profile} subtitle={item.reason} right={<FollowButton userId={item.profile.id} />} />
+            </Appear>
+          )}
+          ListHeaderComponent={<Text variant="mono" tone="muted" style={styles.count}>sugestões para você</Text>}
+        />
+      ) : results === null ? (
         <StateView icon={<UserSearch size={26} color={colors.textSecondary} />} title="Encontre a galera" description="Digite pelo menos 2 letras do @ ou do nome." />
       ) : results.length === 0 && !busy ? (
         <StateView title="Ninguém encontrado" description={`Nenhum perfil com “${q.trim()}”.`} />

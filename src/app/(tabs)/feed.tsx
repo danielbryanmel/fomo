@@ -6,6 +6,8 @@ import { useEffect, useState } from 'react';
 import { postCreated } from '@/lib/bus';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { PostCard, PostCardSkeleton } from '@/components/post/PostCard';
+import { SuggestionsStrip } from '@/components/profile/Suggestions';
+import { StoriesTray } from '@/components/story/StoriesTray';
 import { Chip, NotificationBell, Screen, ScreenHeader, StateView, Text } from '@/components/ui';
 import { Appear } from '@/components/motion';
 import { usePaginated } from '@/hooks/usePaginated';
@@ -57,6 +59,7 @@ export default function FeedScreen() {
                 </View>
               }
             />
+            <StoriesTray />
             <View style={styles.tabs} accessibilityRole="tablist">
               {TABS.map((t) => (
                 <Chip key={t.key} label={t.label} selected={tab === t.key} onPress={() => setTab(t.key)} />
@@ -65,6 +68,7 @@ export default function FeedScreen() {
             {tab === 'for_you' ? (
               <Text variant="caption" tone="muted">Ordenado por atualidade, qualidade de quem publica e interesse — curtidas pesam pouco.</Text>
             ) : null}
+            <SuggestionsStrip />
           </View>
         }
         onEndReached={feed.loadMore}

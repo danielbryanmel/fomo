@@ -314,6 +314,60 @@ ok('enquete: opção inexistente recusada', !!(await fails(C, 'select vote_poll(
 ok('enquete: quem não é do grupo NÃO lê', (await as(B, 'select * from group_polls where id=$1', [poll])).rows.length === 0);
 ok('enquete: cliente NÃO insere voto direto', !!(await fails(B, 'insert into group_poll_votes (poll_id, user_id, option) values ($1, auth.uid(), 0)', [poll])));
 
+// ── Social 4: check-in seguro, stories, sugestões, cheguei bem
+await as(C, 'insert into follows (follower_id, followee_id) values (auth.uid(), $1) on conflict do nothing', [A]);
+await db.query('delete from check_ins where event_id=$1', [E]);
+const pr1 = (await one(C, "select check_in($1, 'friends', 0) p", [E])).p;
+ok('check-in: presença sozinha NÃO mostra número (menos de 3)', pr1.count === null && pr1.few === true && pr1.me.visibility === 'friends');
+ok('check-in "amigos": amigo (segue e é seguido) vê', (await as(A, 'select id from check_ins where user_id=$1 and event_id=$2', [C, E])).rows.length === 1);
+ok('check-in "amigos": estranho NÃO vê', (await as(D, 'select id from check_ins where user_id=$1 and event_id=$2', [C, E])).rows.length === 0);
+ok('check-in "amigos": quem só é seguido NÃO vê', (await as(B, 'select id from check_ins where user_id=$1 and event_id=$2', [C, E])).rows.length === 0);
+await as(C, "select check_in($1, 'public', 120)", [E]);
+ok('check-in "mostrar depois": ninguém vê antes da hora', (await as(A, 'select id from check_ins where user_id=$1 and event_id=$2', [C, E])).rows.length === 0
+  && (await as(D, 'select id from check_ins where user_id=$1 and event_id=$2', [C, E])).rows.length === 0);
+ok('check-in "mostrar depois": a própria pessoa vê', (await as(C, 'select id from check_ins where user_id=auth.uid() and event_id=$1', [E])).rows.length === 1);
+await db.query("update group_members set status='maybe' where group_id=$1 and user_id=$2", [g, C]);
+ok('check-in "mostrar depois": não aparece em "quem tá indo"', (await one(A, 'select event_friends($1) f', [E])).f.every((p) => p.id !== C));
+await db.query("update group_members set status='going' where group_id=$1 and user_id=$2", [g, C]);
+await as(A, "select check_in($1, 'private', 0)", [E]);
+await as(D, "select check_in($1, 'public', 0)", [E]);
+const pr3 = (await one(D, 'select event_presence($1) p', [E])).p;
+ok('check-in anônimo ainda conta no rolê (3 pessoas = número aparece)', pr3.count === 3);
+ok('check-in anônimo: ninguém vê quem é', (await as(C, 'select id from check_ins where user_id=$1 and event_id=$2', [A, E])).rows.length === 0);
+ok('cliente NÃO se marca como verificado', !!(await fails(D, "update check_ins set status='verified', verification_method='qr_code', verified_at=now() where user_id=auth.uid()")));
+const farEv = (await one(C, `insert into events (title, category_id, starts_at, latitude, longitude, created_by) values ('Mês que vem', '${cat}', now() + interval '30 days', -23.55, -46.65, auth.uid()) returning id`)).id;
+await as(C, 'select moderate_event($1, true)', [farEv]);
+ok('check-in fora do horário recusado', /checkin_closed/.test((await fails(A, "select check_in($1, 'public', 0)", [farEv])) ?? ''));
+ok('visibilidade inválida recusada', !!(await fails(A, "select check_in($1, 'todo_mundo', 0)", [E])));
+
+const S1 = '30000000-0000-0000-0000-000000000001';
+ok('story: caminho de outra pessoa recusado', /invalid_media_path/.test((await fails(C, `select create_story($1, $2, 1080, 1920)`, [S1, `${A}/stories/${S1}.jpg`])) ?? ''));
+await as(C, `select create_story($1, $2, 1080, 1920, $3, 'tá bom aqui', 'followers', true)`, [S1, `${C}/stories/${S1}.jpg`, E]);
+const trayA = (await one(A, 'select stories_tray() t')).t;
+ok('story: seguidor vê na bandeja, como não visto', trayA.some((g) => g.author.id === C && g.hasUnseen && g.stories[0].isDual));
+ok('story: estranho NÃO vê', (await one(D, 'select stories_tray() t')).t.every((g) => g.author.id !== C)
+  && (await as(D, 'select id from stories where id=$1', [S1])).rows.length === 0);
+ok('story: estranho NÃO marca visualização', !!(await fails(D, 'select view_story($1)', [S1])));
+await as(A, 'select view_story($1)', [S1]);
+await as(A, 'select view_story($1)', [S1]);
+ok('story: autor vê quem viu (sem duplicar)', (await one(C, 'select story_viewers($1) v', [S1])).v.length === 1);
+ok('story: só o autor vê a lista de quem viu', (await one(A, 'select story_viewers($1) v', [S1])).v.length === 0);
+ok('story: visto some do "não visto"', !(await one(A, 'select stories_tray() t')).t.find((g) => g.author.id === C).hasUnseen);
+ok('story: cliente NÃO insere direto', !!(await fails(C, "insert into stories (id, author_id, storage_path) values (gen_random_uuid(), auth.uid(), 'x')")));
+ok('story: cliente NÃO estica a validade', !!(await fails(C, "update stories set expires_at = now() + interval '30 days' where id=$1", [S1])));
+await db.query("update stories set expires_at = now() - interval '1 minute' where id=$1", [S1]);
+ok('story: vencido some para os outros', (await as(A, 'select id from stories where id=$1', [S1])).rows.length === 0);
+
+const sugD = (await one(D, 'select suggested_people(20) s')).s;
+const aFollows = new Set((await db.query('select followee_id from follows where follower_id=$1', [A])).rows.map((r) => r.followee_id));
+ok('sugestões: nunca sugere quem eu já sigo nem eu mesmo', aFollows.size > 0 && (await one(A, 'select suggested_people(20) s')).s.every((x) => !aFollows.has(x.profile.id) && x.profile.id !== A));
+ok('sugestões: check-in anônimo NÃO vira "foi nos mesmos rolês"', sugD.find((x) => x.profile.id === A)?.reason !== 'Foi nos mesmos rolês');
+ok('sugestões: não expõe campos internos de pontuação', sugD.every((x) => !('mutuals' in x.profile) && !('same_events' in x.profile)));
+
+ok('cheguei bem: avisa o grupo', (await one(C, 'select arrived_home($1) n', [g])).n === 2);
+ok('cheguei bem: não repete o aviso', (await one(C, 'select arrived_home($1) n', [g])).n === 0);
+ok('cheguei bem: quem não é do grupo NÃO dispara', !!(await fails(B, 'select arrived_home($1)', [g])));
+
 // ── conteúdo demo (supabase/demo.sql)
 await db.exec(`alter table auth.users add column if not exists instance_id uuid, add column if not exists aud text, add column if not exists role text,
   add column if not exists raw_app_meta_data jsonb, add column if not exists raw_user_meta_data jsonb, add column if not exists updated_at timestamptz;
