@@ -1,3 +1,4 @@
+import { reportError } from '@/lib/errorReporter';
 /**
  * Mapeamento snake_case (Postgres) → camelCase (domínio). Única camada que conhece nomes de coluna.
  */
@@ -129,7 +130,14 @@ export function friendlyError(e: unknown): Error {
     forbidden: 'Você não tem permissão para isso.',
     'row-level security': 'Você não tem permissão para isso.',
   };
-  for (const [k, v] of Object.entries(map)) if (msg.includes(k)) return new Error(v);
+  for (const [k, v] of Object.entries(map)) {
+    if (msg.includes(k)) {
+      // "sem permissão" inesperado costuma ser bug de regra: registra para a gente ver
+      if (k === 'forbidden' || k === 'row-level security') reportError(e, 'permissão');
+      return new Error(v);
+    }
+  }
   if (/network|fetch/i.test(msg)) return new Error('Sem conexão. Verifique a internet e tente de novo.');
+  reportError(e, 'servidor');
   return new Error('Algo deu errado. Tente de novo.');
 }

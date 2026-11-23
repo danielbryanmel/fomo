@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { MoonStar, Palette, Settings } from 'lucide-react-native';
+import { Bug, MoonStar, Palette, Settings } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { Button, IconButton, Screen, Skeleton, StateView } from '@/components/ui';
 import { ProfileView } from '@/features/profile/ProfileView';
@@ -45,6 +45,7 @@ export default function MyProfileScreen() {
         {__DEV__ ? (
           <IconButton label="Design system" icon={<Palette size={20} color={colors.textMuted} />} onPress={() => router.push('/design-system')} />
         ) : null}
+        <IconButton label="Reportar problema" icon={<Bug size={20} color={colors.textSecondary} />} onPress={() => router.push('/feedback')} />
         <IconButton label="Configurações" icon={<Settings size={20} color={colors.textSecondary} />} onPress={() => router.push('/settings')} />
       </View>
       <ProfileView

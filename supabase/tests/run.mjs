@@ -404,6 +404,17 @@ ok('cliente NÃO liga o modo discreto de outra pessoa', (await as(D, 'update pro
   || (await one(null, 'select discreet_mode from profiles where id=$1', [D])).discreet_mode === true);
 await as(D, 'select set_discreet_mode(false)');
 
+// ── Registro de erros / reportar problema
+await as(A, "select report_client_error('error', 'TypeError: x is undefined', '/feed', 'stack', 'UA', '0.1.0')");
+await as(null, "select report_client_error('error', 'falha sem login', '/login')");
+await as(A, "select report_client_error('feedback', 'O botão de postar não respondeu', '/compose')");
+ok('erros: app registra (com e sem login, e relato)', (await one(null, 'select count(*)::int n from client_errors')).n === 3);
+ok('erros: cliente NÃO lê os registros', !!(await fails(A, 'select * from client_errors')));
+ok('erros: cliente NÃO insere direto', !!(await fails(A, "insert into client_errors (kind, message) values ('error', 'x')")));
+for (let i = 0; i < 45; i++) await as(B, "select report_client_error('error', 'spam')");
+ok('erros: limite por pessoa (40/10 min)', (await one(null, 'select count(*)::int n from client_errors where user_id=$1', [B])).n === 40);
+ok('erros: tipo inválido ignorado', (await as(A, "select report_client_error('hack', 'x')").then(() => true)) && (await one(null, "select count(*)::int n from client_errors where kind not in ('error','feedback')")).n === 0);
+
 // ── conteúdo demo (supabase/demo.sql)
 await db.exec(`alter table auth.users add column if not exists instance_id uuid, add column if not exists aud text, add column if not exists role text,
   add column if not exists raw_app_meta_data jsonb, add column if not exists raw_user_meta_data jsonb, add column if not exists updated_at timestamptz;

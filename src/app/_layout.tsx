@@ -1,4 +1,8 @@
-import { DarkTheme, router, Stack, ThemeProvider, type Theme } from 'expo-router';
+import { DarkTheme, type ErrorBoundaryProps, router, Stack, ThemeProvider, type Theme, usePathname } from 'expo-router';
+import { useEffect } from 'react';
+import { View } from 'react-native';
+import { Button, Text } from '@/components/ui';
+import { installGlobalErrorHandlers, reportError, setErrorRoute } from '@/lib/errorReporter';
 import { ChevronLeft } from 'lucide-react-native';
 import { Platform } from 'react-native';
 import { PressableScale } from '@/components/motion/PressableScale';
@@ -12,6 +16,28 @@ import { AuthProvider } from '@/features/auth/AuthProvider';
 import { colors } from '@/theme';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
+installGlobalErrorHandlers();
+
+/** Se uma tela quebrar: registra o erro e oferece tentar de novo, em vez de tela branca. */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    reportError(error, 'tela quebrou');
+  }, [error]);
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 16 }}>
+      <Text variant="headline" align="center">Opa, essa tela travou</Text>
+      <Text tone="secondary" align="center">Já registramos o problema para corrigir. Tente de novo.</Text>
+      <Button label="Tentar de novo" onPress={() => void retry()} />
+      <Button label="Voltar ao início" variant="ghost" onPress={() => router.replace('/')} />
+    </View>
+  );
+}
+
+function RouteTracker() {
+  const path = usePathname();
+  useEffect(() => setErrorRoute(path), [path]);
+  return null;
+}
 
 const navigationTheme: Theme = {
   ...DarkTheme,
@@ -35,6 +61,7 @@ export default function RootLayout() {
         <AuthProvider>
         <ToastProvider>
           <StatusBar style="light" />
+          <RouteTracker />
           <Stack
             screenOptions={{
               headerShown: false,
@@ -68,6 +95,7 @@ export default function RootLayout() {
             <Stack.Screen name="group/new" options={{ headerShown: true, title: 'Novo grupo', presentation: 'modal' }} />
             <Stack.Screen name="group/[id]" options={{ headerShown: true, title: 'Grupo' }} />
             <Stack.Screen name="recap/[username]" options={{ headerShown: true, title: 'Retrospectiva' }} />
+            <Stack.Screen name="feedback" options={{ headerShown: true, title: 'Reportar problema', presentation: 'modal' }} />
             <Stack.Screen name="checkin/[id]" options={{ headerShown: true, title: 'Check-in', presentation: 'modal' }} />
             <Stack.Screen name="story/new" options={{ headerShown: true, title: 'Novo story', presentation: 'modal' }} />
             <Stack.Screen name="story/[id]" options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }} />

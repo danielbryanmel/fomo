@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Camera, ChevronRight, EyeOff, Lock, LogOut, MapPinned, ShieldCheck } from 'lucide-react-native';
+import { Bug, Camera, ChevronRight, EyeOff, Lock, LogOut, MapPinned, ShieldCheck } from 'lucide-react-native';
 import { type ReactNode, useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Field } from '@/components/form/Field';
@@ -150,6 +150,7 @@ export default function SettingsScreen() {
 
         {auth.status === 'ready' ? (
           <Appear index={4}>
+            <Button label="Reportar um problema" variant="secondary" icon={<Bug size={18} color={colors.text} />} onPress={() => router.push('/feedback')} />
             <Button label="Sair da conta" variant="danger" icon={<LogOut size={18} color={colors.danger} />} onPress={() => setConfirmOut(true)} />
           </Appear>
         ) : (
