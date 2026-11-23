@@ -67,8 +67,8 @@ export default function MyProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  actions: { flexDirection: 'row', gap: spacing.sm },
-  flex: { flex: 1 },
+  actions: { flex: 1, flexDirection: 'row', gap: spacing.sm },
+  flex: { flex: 1, minWidth: 0 },
   topBar: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.sm },
   skeleton: { gap: spacing.md, paddingTop: spacing.xxl },
 });
