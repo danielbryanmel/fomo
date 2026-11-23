@@ -53,9 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       void loadProfile(data.session);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
-      void loadProfile(s);
+      // NÃO chamar o Supabase dentro deste callback: o cliente segura um lock de auth
+      // enquanto ele roda e a consulta trava (era o "precisa fechar e abrir o app").
+      // Adiamos para o próximo ciclo. TOKEN_REFRESHED não muda o perfil.
+      if (event === 'TOKEN_REFRESHED') return;
+      if (s) setStatus((st) => (st === 'ready' ? st : 'loading'));
+      setTimeout(() => void loadProfile(s), 0);
     });
     return () => sub.subscription.unsubscribe();
   }, [loadProfile]);
