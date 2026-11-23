@@ -67,6 +67,7 @@ export default function RootLayout() {
             <Stack.Screen name="messages/[id]" options={{ headerShown: true, title: '' }} />
             <Stack.Screen name="group/new" options={{ headerShown: true, title: 'Novo grupo', presentation: 'modal' }} />
             <Stack.Screen name="group/[id]" options={{ headerShown: true, title: 'Grupo' }} />
+            <Stack.Screen name="recap/[username]" options={{ headerShown: true, title: 'Retrospectiva' }} />
             <Stack.Screen name="settings" options={{ headerShown: true, title: 'Editar perfil', presentation: 'modal' }} />
             <Stack.Screen name="suggest" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
             <Stack.Screen name="moderation" options={{ headerShown: true, title: 'Moderação' }} />

@@ -19,10 +19,12 @@ const msgs: Message[] = [
 ];
 const listeners = new Map<string, Set<(m: Message) => void>>();
 
-type G = { id: string; eventId: string; ownerId: string; name: string; createdAt: string; members: Map<string, GroupStatus> };
+type Poll = { id: string; question: string; options: string[]; votes: Map<string, number>; createdBy: string; createdAt: string };
+type G = { id: string; eventId: string; ownerId: string; name: string; createdAt: string; members: Map<string, GroupStatus>; polls?: Poll[] };
 const groups: G[] = [
   { id: 'g-1', eventId: 'e-1', ownerId: 'u-lia', name: 'Sextou no Baile', createdAt: new Date().toISOString(),
-    members: new Map<string, GroupStatus>([['u-lia', 'going'], ['u-teo', 'going'], ['u-caio', 'maybe'], [ME, 'invited']]) },
+    members: new Map<string, GroupStatus>([['u-lia', 'going'], ['u-teo', 'going'], ['u-caio', 'maybe'], [ME, 'invited']]),
+    polls: [{ id: 'pl-1', question: 'Onde a gente esquenta?', options: ['Bar da esquina', 'Casa da Lia'], votes: new Map([['u-lia', 1], ['u-teo', 1]]), createdBy: 'u-lia', createdAt: new Date().toISOString() }] },
 ];
 
 function groupView(g: G): GroupView {
@@ -37,6 +39,11 @@ function groupView(g: G): GroupView {
   return {
     id: g.id, name: g.name, ownerId: g.ownerId, createdAt: g.createdAt, counts, members, myStatus: g.members.get(ME) ?? null,
     event: { id: e.id, title: e.title, venueName: e.venueName, startsAt: e.startsAt, endsAt: e.endsAt },
+    polls: (g.polls ?? []).map((p) => ({
+      id: p.id, question: p.question, options: p.options, createdBy: p.createdBy, createdAt: p.createdAt,
+      votes: p.options.map((_, i) => [...p.votes.values()].filter((v) => v === i).length),
+      myVote: p.votes.get(ME) ?? null,
+    })),
   };
 }
 
@@ -84,6 +91,8 @@ export const mockMessages: MessagesRepository = {
           id: c.id, other: byId(c.members.find((m) => m !== ME)!) ?? null, lastAt: last.createdAt,
           last: { body: last.body, senderId: last.senderId, createdAt: last.createdAt },
           unread: last.senderId !== ME && last.createdAt > (c.lastRead[ME] ?? ''),
+          iFollow: db.follows.some((f) => f.followerId === ME && f.followeeId === c.members.find((m) => m !== ME) && f.status === 'accepted'),
+          replied: msgs.some((m) => m.conversationId === c.id && m.senderId === ME),
         };
       })
       .sort((a, b) => b.lastAt.localeCompare(a.lastAt));
@@ -161,5 +170,23 @@ export const mockGroups: GroupsRepository = {
   },
   async leave(groupId) {
     groups.find((x) => x.id === groupId)?.members.delete(ME);
+  },
+  async createPoll(groupId, question, options) {
+    await delay(150);
+    const g = groups.find((x) => x.id === groupId);
+    const opts = options.map((o) => o.trim()).filter(Boolean).slice(0, 4);
+    if (!g || opts.length < 2) throw new Error('A enquete precisa de pergunta e pelo menos 2 opções.');
+    (g.polls ??= []).unshift({ id: `pl-${Date.now()}`, question: question.trim(), options: opts, votes: new Map(), createdBy: ME, createdAt: new Date().toISOString() });
+  },
+  async vote(pollId, option) {
+    await delay(100);
+    const p = groups.flatMap((g) => g.polls ?? []).find((x) => x.id === pollId);
+    if (p) p.votes.set(ME, option);
+  },
+  async friendsGoing(eventId) {
+    await delay(150);
+    const ids = new Set<string>();
+    groups.filter((g) => g.eventId === eventId && g.members.has(ME)).forEach((g) => g.members.forEach((s, u) => s === 'going' && u !== ME && ids.add(u)));
+    return [...ids].map((u) => byId(u)!).filter(Boolean) as UserProfile[];
   },
 };

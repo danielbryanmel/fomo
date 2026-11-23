@@ -284,6 +284,36 @@ for (let k = 0; k < 3; k++) await as(A, `insert into events (title, category_id,
 await as(C, "select moderate_event((select id from events where series_id = $1 order by starts_at limit 1), true)", [sid]);
 ok('aprovar 1 rolê aprova a série inteira', (await one(null, "select count(*)::int n from events where series_id=$1 and status='approved'", [sid])).n === 3);
 
+// ── Social 3
+const inbox2 = (await one(A, 'select inbox() i')).i;
+ok('direct: inbox marca quem eu sigo e se já respondi', inbox2[0].iFollow === true && inbox2[0].replied === true);
+const inboxC = (await one(C, 'select inbox() i')).i;
+ok('direct: para quem só recebeu, conta como solicitação', inboxC[0].replied === false);
+await as(C, "insert into check_ins (user_id, event_id, visibility) values (auth.uid(), $1, 'followers') on conflict do nothing", [E]);
+const fr = (await one(A, 'select event_friends($1) f', [E])).f;
+ok('quem tá indo: amigo com presença visível aparece', fr.some((p) => p.id === C), JSON.stringify(fr.map((p) => p.username)));
+ok('quem tá indo: quem NÃO segue não vê ninguém', (await one(D, 'select event_friends($1) f', [E])).f.every((p) => p.id !== C));
+ok('quem tá indo: "vou" em grupo alheio NÃO vaza', (await one(B, 'select event_friends($1) f', [E])).f.every((p) => p.id !== C));
+const E2 = (await one(A, `insert into events (title, category_id, starts_at, latitude, longitude, created_by) values ('Em 1h', '${cat}', now() + interval '1 hour', -23.55, -46.65, auth.uid()) returning id`)).id;
+await as(C, 'select moderate_event($1, true)', [E2]);
+const g2 = (await one(A, "select create_group($1, 'Daqui a pouco', array[$2]::uuid[]) g", [E2, C])).g;
+await as(C, "select respond_group($1, 'going')", [g2]);
+ok('cliente NÃO dispara lembretes', !!(await fails(A, 'select send_event_reminders()')));
+await db.query('select send_event_reminders()');
+await db.query('select send_event_reminders()');
+ok('lembrete 2 h antes: 1 por pessoa confirmada (sem repetir)', (await one(null, "select count(*)::int n from notifications where type='event_reminder' and entity_id=$1", [g2])).n === 2);
+const poll = (await one(A, "select create_poll($1, 'Onde esquenta?', array['Bar A','Casa do Caio','']) p", [g])).p;
+ok('enquete criada e grupo notificado', !!poll && (await one(null, "select count(*)::int n from notifications where type='group_poll' and entity_id=$1", [g])).n >= 1);
+await as(C, 'select vote_poll($1, 1::smallint)', [poll]);
+await as(C, 'select vote_poll($1, 0::smallint)', [poll]);
+await as(D, 'select vote_poll($1, 0::smallint)', [poll]);
+const gp = (await one(C, 'select group_json($1) j', [g])).j.polls[0];
+ok('enquete: voto único por pessoa (troca de voto)', gp.votes[0] === 2 && gp.votes[1] === 0 && gp.myVote === 0 && gp.options.length === 2);
+ok('enquete: quem não é do grupo NÃO vota', !!(await fails(B, 'select vote_poll($1, 0::smallint)', [poll])));
+ok('enquete: opção inexistente recusada', !!(await fails(C, 'select vote_poll($1, 3::smallint)', [poll])));
+ok('enquete: quem não é do grupo NÃO lê', (await as(B, 'select * from group_polls where id=$1', [poll])).rows.length === 0);
+ok('enquete: cliente NÃO insere voto direto', !!(await fails(B, 'insert into group_poll_votes (poll_id, user_id, option) values ($1, auth.uid(), 0)', [poll])));
+
 // ── conteúdo demo (supabase/demo.sql)
 await db.exec(`alter table auth.users add column if not exists instance_id uuid, add column if not exists aud text, add column if not exists role text,
   add column if not exists raw_app_meta_data jsonb, add column if not exists raw_user_meta_data jsonb, add column if not exists updated_at timestamptz;

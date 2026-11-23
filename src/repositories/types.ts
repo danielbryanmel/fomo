@@ -149,6 +149,10 @@ export interface GroupsRepository {
   respond(groupId: string, status: Exclude<GroupStatus, 'invited'>): Promise<void>;
   invite(groupId: string, invitees: string[]): Promise<number>;
   leave(groupId: string): Promise<void>;
+  createPoll(groupId: string, question: string, options: string[]): Promise<void>;
+  vote(pollId: string, option: number): Promise<void>;
+  /** Pessoas que eu sigo e que vão ao rolê (só o que eu já poderia ver). */
+  friendsGoing(eventId: string): Promise<UserProfile[]>;
 }
 
 export interface SocialRepository {

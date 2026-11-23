@@ -23,7 +23,11 @@ function check<T>(res: { data: T; error: unknown }): T {
 }
 
 const toMessage = (r: Row): Message => ({ id: r.id, conversationId: r.conversation_id, senderId: r.sender_id, body: r.body, createdAt: r.created_at });
-const toGroup = (j: Row): GroupView => ({ ...(j as GroupView), members: (j.members ?? []).map((m: Row) => ({ status: m.status, profile: toProfile(m.profile) })) });
+const toGroup = (j: Row): GroupView => ({
+  ...(j as GroupView),
+  members: (j.members ?? []).map((m: Row) => ({ status: m.status, profile: toProfile(m.profile) })),
+  polls: (j.polls ?? []).map((p: Row) => ({ ...p, votes: (p.votes ?? []).map(Number), myVote: p.myVote ?? null })),
+});
 /** Escapa curingas e separadores do filtro PostgREST; limita o tamanho. */
 const likeTerm = (q: string) => `*${q.trim().slice(0, 40).replace(/[%_*,().\\]/g, ' ').trim()}*`;
 
@@ -58,7 +62,7 @@ export const profilesExtra: Pick<ProfilesRepository, 'changeUsername' | 'search'
 export const messagesRepo: MessagesRepository = {
   async inbox() {
     const list = (check(await sb().rpc('inbox')) ?? []) as Row[];
-    return list.map((c): ConversationPreview => ({ id: c.id, lastAt: c.lastAt, unread: !!c.unread, last: c.last ?? null, other: c.other ? toProfile(c.other) : null }));
+    return list.map((c): ConversationPreview => ({ id: c.id, lastAt: c.lastAt, unread: !!c.unread, last: c.last ?? null, other: c.other ? toProfile(c.other) : null, iFollow: !!c.iFollow, replied: !!c.replied }));
   },
   async open(userId) {
     return check(await sb().rpc('start_conversation', { p_other: userId })) as string;
@@ -110,5 +114,16 @@ export const groupsRepo: GroupsRepository = {
   async leave(groupId) {
     const me = await uid();
     check(await sb().from('group_members').delete().eq('group_id', groupId).eq('user_id', me));
+  },
+  async createPoll(groupId, question, options) {
+    check(await sb().rpc('create_poll', { p_group: groupId, p_question: question.trim(), p_options: options }));
+  },
+  async vote(pollId, option) {
+    check(await sb().rpc('vote_poll', { p_poll: pollId, p_option: option }));
+  },
+  async friendsGoing(eventId) {
+    const { data } = await sb().auth.getSession();
+    if (!data.session) return [];
+    return ((check(await sb().rpc('event_friends', { p_event_id: eventId })) ?? []) as Row[]).map(toProfile);
   },
 };

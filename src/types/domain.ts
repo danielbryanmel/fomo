@@ -299,7 +299,7 @@ export type CommentView = {
 
 export type NotificationType =
   | 'follow' | 'follow_request' | 'follow_accepted' | 'like' | 'comment' | 'achievement' | 'event_approved' | 'moderation'
-  | 'message' | 'group_invite' | 'group_response';
+  | 'message' | 'group_invite' | 'group_response' | 'event_reminder' | 'group_poll';
 
 export type NotificationView = {
   id: UUID;
@@ -350,6 +350,10 @@ export type ConversationPreview = {
   last: { body: string; senderId: UUID; createdAt: ISODateString } | null;
   lastAt: ISODateString;
   unread: boolean;
+  /** Eu sigo a outra pessoa. */
+  iFollow: boolean;
+  /** Já mandei alguma mensagem nessa conversa (deixa de ser "solicitação"). */
+  replied: boolean;
 };
 
 export type GroupStatus = 'invited' | 'going' | 'maybe' | 'declined';
@@ -363,4 +367,15 @@ export type GroupView = {
   myStatus: GroupStatus | null;
   counts: Record<GroupStatus, number>;
   members: { status: GroupStatus; profile: UserProfile }[];
+  polls: GroupPoll[];
+};
+
+export type GroupPoll = {
+  id: UUID;
+  question: string;
+  options: string[];
+  votes: number[];
+  myVote: number | null;
+  createdBy: UUID;
+  createdAt: ISODateString;
 };

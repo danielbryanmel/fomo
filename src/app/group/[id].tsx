@@ -3,6 +3,7 @@ import { MapPinned, UserPlus, Users } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { FriendPicker } from '@/components/group/FriendPicker';
+import { Polls } from '@/components/group/Polls';
 import { RespondButtons, STATUS_LABEL, whenLabel } from '@/components/group/GroupCard';
 import { Appear } from '@/components/motion';
 import { PersonRow } from '@/components/profile/PersonRow';
@@ -65,6 +66,8 @@ export default function GroupScreen() {
             <Button label={`Convidar ${picked.length || ''}`.trim()} disabled={!picked.length} onPress={sendInvites} fullWidth />
           </View>
         ) : null}
+
+        <Polls groupId={g.id} polls={g.polls ?? []} canCreate={g.myStatus === 'going' || g.myStatus === 'maybe'} onChange={() => void group.refresh()} />
 
         {ORDER.map((st) => {
           const ms = g.members.filter((m) => m.status === st);

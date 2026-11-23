@@ -7,10 +7,52 @@ import type { GeoPoint, Neighborhood } from '@/types/domain';
 export type LocationStatus = 'checking' | 'prompt' | 'granted' | 'denied' | 'unavailable';
 
 const HOOD_KEY = 'fomo.neighborhood.v1';
+const LAST_KEY = 'fomo.lastfix.v1';
+const GRANTED_KEY = 'fomo.locgranted.v1';
+
+async function remember(f: Fix) {
+  try {
+    await AsyncStorage.multiSet([
+      [LAST_KEY, JSON.stringify({ ...f, at: Date.now() })],
+      [GRANTED_KEY, '1'],
+    ]);
+  } catch {
+    /* ignora */
+  }
+}
+
+/**
+ * Estado da permissão sem disparar o pedido.
+ * Web: Permissions API (Chrome, Android, Safari 16+). Onde ela não existe, usamos a marca
+ * de que a pessoa já aceitou antes — aí lemos direto, sem mostrar a nossa tela de pedido de novo.
+ */
+async function permissionState(): Promise<'granted' | 'denied' | 'prompt'> {
+  if (Platform.OS === 'web') {
+    try {
+      const nav = navigator as Navigator & { permissions?: Permissions };
+      if (nav.permissions?.query) {
+        const r = await nav.permissions.query({ name: 'geolocation' as PermissionName });
+        if (r.state === 'granted' || r.state === 'denied') return r.state;
+      }
+    } catch {
+      /* Safari antigo */
+    }
+    try {
+      if ((await AsyncStorage.getItem(GRANTED_KEY)) === '1') return 'granted';
+    } catch {
+      /* ignora */
+    }
+    return 'prompt';
+  }
+  const perm = await Location.getForegroundPermissionsAsync();
+  if (perm.granted) return 'granted';
+  return perm.canAskAgain === false ? 'denied' : 'prompt';
+}
 
 /**
  * Localização sob demanda (decisão V2):
  *  - NÃO pede permissão ao abrir o app; só quando a pessoa toca em "Usar minha localização";
+ *  - depois de aceita, fica lembrada: nas próximas aberturas a posição vem direto, sem pedir de novo;
  *  - só "enquanto o app está em uso" (foreground), leitura pontual — sem watchPosition/background;
  *  - se negada ou indisponível, o app funciona por bairro escolhido manualmente.
  */
@@ -24,37 +66,63 @@ export function useLocation() {
     let alive = true;
     (async () => {
       try {
-        const saved = await AsyncStorage.getItem(HOOD_KEY);
+        const [saved, last] = await Promise.all([AsyncStorage.getItem(HOOD_KEY), AsyncStorage.getItem(LAST_KEY)]);
         if (saved && alive) setNeighborhoodState(JSON.parse(saved) as Neighborhood);
+        // mostra na hora a última posição conhecida (até 6 h), enquanto busca a atual
+        if (last && alive) {
+          const l = JSON.parse(last) as { point: GeoPoint; accuracyM: number | null; at: number };
+          if (Date.now() - l.at < 6 * 3600_000) {
+            setPosition(l.point);
+            setAccuracyM(l.accuracyM);
+          }
+        }
       } catch {
         /* storage indisponível */
       }
       try {
-        const perm = await Location.getForegroundPermissionsAsync();
+        const st = await permissionState();
         if (!alive) return;
-        if (perm.granted) {
+        if (st === 'granted') {
           setStatus('granted');
           void readFix().then((f) => {
-            if (alive && f) {
-              setPosition(f.point);
-              setAccuracyM(f.accuracyM);
-            }
+            if (alive && f) apply(f);
           });
+        } else if (st === 'denied') {
+          setStatus('denied');
         } else {
-          setStatus(perm.canAskAgain === false ? 'denied' : 'prompt');
+          setStatus('prompt');
         }
       } catch {
         if (alive) setStatus('unavailable');
       }
     })();
+    const apply = (f: Fix) => {
+      setPosition(f.point);
+      setAccuracyM(f.accuracyM);
+      void remember(f);
+    };
     return () => {
       alive = false;
     };
   }, []);
 
-  /** Pede permissão (contextual) e faz UMA leitura. */
+  /** Pede permissão (contextual) e faz UMA leitura. A permissão fica lembrada. */
   const request = useCallback(async (): Promise<GeoPoint | null> => {
     try {
+      if (Platform.OS === 'web') {
+        // no navegador, a própria leitura dispara o pedido; se a pessoa aceitar, lembramos para sempre
+        const f = await webBestFix();
+        if (!f) {
+          const st = await permissionState();
+          setStatus(st === 'denied' ? 'denied' : 'prompt');
+          return null;
+        }
+        setStatus('granted');
+        setPosition(f.point);
+        setAccuracyM(f.accuracyM);
+        void remember(f);
+        return f.point;
+      }
       const perm = await Location.requestForegroundPermissionsAsync();
       if (!perm.granted) {
         setStatus(perm.canAskAgain === false ? 'denied' : 'prompt');
@@ -64,6 +132,7 @@ export function useLocation() {
       const f = await readFix();
       setPosition(f?.point ?? null);
       setAccuracyM(f?.accuracyM ?? null);
+      if (f) void remember(f);
       return f?.point ?? null;
     } catch {
       setStatus('unavailable');

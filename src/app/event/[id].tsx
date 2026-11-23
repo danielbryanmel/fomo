@@ -5,6 +5,7 @@ import { CalendarX, ChevronLeft, ImagePlus, MapPinned, Navigation, Share2, Star,
 import { type ReactNode, useCallback, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { FriendsGoing } from '@/components/event/FriendsGoing';
 import { LiveStatusCard } from '@/components/live/LiveStatusCard';
 import { NightChart } from '@/components/live/NightChart';
 import { StatTile } from '@/components/live/StatTile';
@@ -36,6 +37,7 @@ export default function EventDetailScreen() {
     seen.current = true;
   }, [refreshReviews]));
   const posts = useAsync(() => repositories.posts.listByEvent(id), [id]);
+  const friends = useAsync(() => repositories.groups.friendsGoing(id).catch(() => []), [id]);
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
@@ -101,6 +103,8 @@ export default function EventDetailScreen() {
               <Text variant="caption" tone="secondary">O termômetro ao vivo liga quando o rolê começar.</Text>
             </View>
           ) : null}
+
+          {!ended && friends.data?.length ? <FriendsGoing people={friends.data} /> : null}
 
           <View style={styles.grid}>
             {now && s?.crowd ? (

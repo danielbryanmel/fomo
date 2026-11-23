@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Palette, Settings } from 'lucide-react-native';
+import { MoonStar, Palette, Settings } from 'lucide-react-native';
 import { StyleSheet, View } from 'react-native';
 import { Button, IconButton, Screen, Skeleton, StateView } from '@/components/ui';
 import { ProfileView } from '@/features/profile/ProfileView';
@@ -50,13 +50,25 @@ export default function MyProfileScreen() {
       <ProfileView
         data={me.data}
         onRefresh={me.refresh}
-        actions={<Button label="Editar perfil" variant="secondary" fullWidth onPress={() => router.push('/settings')} />}
+        actions={
+          <View style={styles.actions}>
+            <View style={styles.flex}><Button label="Editar perfil" variant="secondary" fullWidth onPress={() => router.push('/settings')} /></View>
+            {me.data ? (
+              <View style={styles.flex}>
+                <Button label="Minha noite" variant="secondary" fullWidth icon={<MoonStar size={16} color={colors.text} />}
+                  onPress={() => router.push({ pathname: '/recap/[username]', params: { username: me.data!.profile.username } })} />
+              </View>
+            ) : null}
+          </View>
+        }
       />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  actions: { flexDirection: 'row', gap: spacing.sm },
+  flex: { flex: 1 },
   topBar: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.sm },
   skeleton: { gap: spacing.md, paddingTop: spacing.xxl },
 });

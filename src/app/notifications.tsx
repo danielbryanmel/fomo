@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { MessageCircleMore, Users } from 'lucide-react-native';
+import { AlarmClock, MessageCircleMore, Users, Vote } from 'lucide-react-native';
 import { FomoCommentIcon, FomoLikeIcon } from '@/components/icons/FomoIcons';
 import { Award, BellOff, CalendarCheck, ShieldCheck, UserCheck, UserPlus } from 'lucide-react-native';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
@@ -25,6 +25,8 @@ const COPY: Record<NotificationType, string> = {
   message: 'te mandou uma mensagem',
   group_invite: 'te chamou para um grupo de rolê',
   group_response: 'respondeu ao convite do seu grupo',
+  event_reminder: 'Seu rolê começa em menos de 2 h. Bora se arrumar?',
+  group_poll: 'abriu uma enquete no grupo',
 };
 
 const ICON: Record<NotificationType, ReactNode> = {
@@ -39,6 +41,8 @@ const ICON: Record<NotificationType, ReactNode> = {
   message: <MessageCircleMore size={14} color={colors.text} />,
   group_invite: <Users size={14} color={colors.text} />,
   group_response: <Users size={14} color={colors.text} />,
+  event_reminder: <AlarmClock size={14} color={colors.text} />,
+  group_poll: <Vote size={14} color={colors.text} />,
 };
 
 const exit = FadeOut.duration(motion.fast).reduceMotion(ReduceMotion.System);
