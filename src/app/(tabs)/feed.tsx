@@ -1,4 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { IconButton } from '@/components/ui/IconButton';
+import { MessageCircleMore, UserSearch } from 'lucide-react-native';
 import { Newspaper, UserPlus } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { postCreated } from '@/lib/bus';
@@ -45,7 +47,16 @@ export default function FeedScreen() {
         contentContainerStyle={styles.list}
         ListHeaderComponent={
           <View style={styles.header}>
-            <ScreenHeader title="Feed" trailing={<NotificationBell />} />
+            <ScreenHeader
+              title="Feed"
+              trailing={
+                <View style={styles.headerBtns}>
+                  <IconButton variant="filled" label="Buscar pessoas" icon={<UserSearch size={19} color={colors.text} />} onPress={() => router.push('/people')} />
+                  <IconButton variant="filled" label="Mensagens" icon={<MessageCircleMore size={19} color={colors.text} />} onPress={() => router.push('/messages')} />
+                  <NotificationBell />
+                </View>
+              }
+            />
             <View style={styles.tabs} accessibilityRole="tablist">
               {TABS.map((t) => (
                 <Chip key={t.key} label={t.label} selected={tab === t.key} onPress={() => setTab(t.key)} />
@@ -93,6 +104,7 @@ export default function FeedScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerBtns: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   list: { paddingHorizontal: spacing.lg, paddingBottom: TAB_BAR_SPACE + spacing.xl },
   header: { gap: spacing.sm, marginBottom: spacing.md },
   tabs: { flexDirection: 'row', gap: spacing.sm },

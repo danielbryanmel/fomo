@@ -1,4 +1,5 @@
-import { Link } from 'expo-router';
+import { PressableScale } from '@/components/motion/PressableScale';
+import { Link, router } from 'expo-router';
 import { DemoTag } from '@/components/ui/DemoTag';
 import { Info, Lock } from 'lucide-react-native';
 import type { ReactNode } from 'react';
@@ -50,8 +51,10 @@ export function ProfileHeader({ profile, actions }: Props) {
       {/* Números: rolês · avaliações · seguidores · credibilidade */}
       <View style={styles.tiles}>
         <Tile value={formatCount(profile.totalExperiences)} label="rolês" />
-        <Tile value={formatCount(profile.totalReviews)} label="avaliações" />
-        <Tile value={formatCount(profile.followersCount)} label="seguidores" />
+        <Tile value={formatCount(profile.followersCount)} label="seguidores"
+          onPress={() => router.push({ pathname: '/connections/[username]', params: { username: profile.username, tab: 'followers' } })} />
+        <Tile value={formatCount(profile.followingCount)} label="seguindo"
+          onPress={() => router.push({ pathname: '/connections/[username]', params: { username: profile.username, tab: 'following' } })} />
         <Link href="/reputation" asChild>
           <Pressable style={StyleSheet.flatten([styles.tile, styles.credTile])} accessibilityRole="link" accessibilityLabel={`Credibilidade ${Math.round(profile.credibilityScore)} de 100. Ver como é calculada`}>
             <View style={styles.credTop}>
@@ -68,12 +71,17 @@ export function ProfileHeader({ profile, actions }: Props) {
   );
 }
 
-function Tile({ value, label }: { value: string; label: string }) {
-  return (
-    <View style={styles.tile} accessible accessibilityLabel={`${value} ${label}`}>
+function Tile({ value, label, onPress }: { value: string; label: string; onPress?: () => void }) {
+  const body = (
+    <>
       <Text variant="headline">{value}</Text>
       <Text variant="caption" tone="muted" numberOfLines={1} style={styles.tileLabel}>{label}</Text>
-    </View>
+    </>
+  );
+  return onPress ? (
+    <PressableScale style={styles.tile} onPress={onPress} scaleTo={0.95} accessibilityRole="link" accessibilityLabel={`${value} ${label}. Ver lista`}>{body}</PressableScale>
+  ) : (
+    <View style={styles.tile} accessible accessibilityLabel={`${value} ${label}`}>{body}</View>
   );
 }
 

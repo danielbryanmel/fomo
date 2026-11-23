@@ -298,7 +298,8 @@ export type CommentView = {
 };
 
 export type NotificationType =
-  | 'follow' | 'follow_request' | 'follow_accepted' | 'like' | 'comment' | 'achievement' | 'event_approved' | 'moderation';
+  | 'follow' | 'follow_request' | 'follow_accepted' | 'like' | 'comment' | 'achievement' | 'event_approved' | 'moderation'
+  | 'message' | 'group_invite' | 'group_response';
 
 export type NotificationView = {
   id: UUID;
@@ -319,6 +320,8 @@ export type ProfileSettings = {
   isPrivate: boolean;
   defaultCheckinVisibility: ContentVisibility;
   isModerator: boolean;
+  /** Trocas de @ gratuitas restantes (1 no total). */
+  usernameChangesLeft: number;
 };
 
 export type EventSubmission = {
@@ -333,4 +336,31 @@ export type EventSubmission = {
   priceMaxCents: number | null;
   ticketUrl: string | null;
   description: string | null;
+  /** 0 = não repete; N = mesmo dia/horário por N semanas (série aprovada de uma vez). */
+  repeatWeeks?: number;
+};
+
+/* ───────────────────────── Direct e grupos (Social 2) ───────────────────────── */
+
+export type Message = { id: UUID; conversationId: UUID; senderId: UUID; body: string; createdAt: ISODateString };
+
+export type ConversationPreview = {
+  id: UUID;
+  other: UserProfile | null;
+  last: { body: string; senderId: UUID; createdAt: ISODateString } | null;
+  lastAt: ISODateString;
+  unread: boolean;
+};
+
+export type GroupStatus = 'invited' | 'going' | 'maybe' | 'declined';
+
+export type GroupView = {
+  id: UUID;
+  name: string;
+  ownerId: UUID;
+  createdAt: ISODateString;
+  event: { id: UUID; title: string; venueName: string | null; startsAt: ISODateString; endsAt: ISODateString | null };
+  myStatus: GroupStatus | null;
+  counts: Record<GroupStatus, number>;
+  members: { status: GroupStatus; profile: UserProfile }[];
 };

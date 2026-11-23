@@ -1,4 +1,6 @@
 import { Appear } from '@/components/motion';
+import { Text } from '@/components/ui/Text';
+import { GroupCard } from '@/components/group/GroupCard';
 import { FomoSaveIcon } from '@/components/icons/FomoIcons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -17,12 +19,14 @@ export default function SavedScreen() {
   const [tab, setTab] = useState<Tab>('events');
   const events = useAsync(() => repositories.events.listSaved(), []);
   const posts = useAsync(() => repositories.posts.listSaved(), []);
+  const groups = useAsync(() => repositories.groups.mine(), []);
 
   // recarrega ao voltar para a aba (itens salvos em outras telas)
   useFocusEffect(
     useCallback(() => {
       void events.refresh();
       void posts.refresh();
+      void groups.refresh();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []),
   );
@@ -40,6 +44,16 @@ export default function SavedScreen() {
         refreshControl={<RefreshControl refreshing={current.refreshing} onRefresh={current.refresh} tintColor={colors.accentPink} />}
       >
         <ScreenHeader title="Quero ir" subtitle="Rolês e posts que você guardou · só você vê" />
+        {(groups.data ?? []).length ? (
+          <View style={styles.groups}>
+            <Text variant="mono" tone="muted">seus grupos · convites</Text>
+            {groups.data!.map((g, i) => (
+              <Appear key={g.id} index={i}>
+                <GroupCard group={g} onChange={(ng) => groups.setData((l) => l?.map((x) => (x.id === ng.id ? ng : x)))} />
+              </Appear>
+            ))}
+          </View>
+        ) : null}
         <SegmentedTabs tabs={[{ key: 'events', label: 'Eventos' }, { key: 'posts', label: 'Publicações' }]} value={tab} onChange={setTab} />
         <View style={styles.list}>
           {current.loading && !current.data ? (tab === 'events' ? <EventCardSkeleton /> : <PostCardSkeleton />) : null}
@@ -62,6 +76,7 @@ export default function SavedScreen() {
 }
 
 const styles = StyleSheet.create({
+  groups: { gap: spacing.md, marginBottom: spacing.sm },
   content: { paddingHorizontal: spacing.lg, paddingBottom: TAB_BAR_SPACE + spacing.xl, flexGrow: 1 },
   list: { gap: spacing.md, paddingTop: spacing.lg, flexGrow: 1 },
 });

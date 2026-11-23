@@ -14,6 +14,7 @@ export default function PublicProfileScreen() {
   const profile = useAsync(() => repositories.profiles.getByUsername(username), [username]);
   const [menu, setMenu] = useState<'none' | 'menu' | 'block'>('none');
   const [busy, setBusy] = useState(false);
+  const [opening, setOpening] = useState(false);
 
   if (profile.loading && !profile.data) {
     return (
@@ -43,6 +44,18 @@ export default function PublicProfileScreen() {
       toast('Não foi possível concluir agora.', 'error');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function message() {
+    setOpening(true);
+    try {
+      const id = await repositories.messages.open(p.id);
+      router.push({ pathname: '/messages/[id]', params: { id } });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Não foi possível abrir a conversa.', 'error');
+    } finally {
+      setOpening(false);
     }
   }
 
@@ -93,14 +106,21 @@ export default function PublicProfileScreen() {
         onRefresh={profile.refresh}
         actions={
           rel.isSelf ? null : (
-            <Button
-              label={followLabel}
-              variant={rel.followStatus ? 'secondary' : 'primary'}
-              loading={busy}
-              onPress={toggleFollow}
-              fullWidth
-              accessibilityHint={p.isPrivate && !rel.followStatus ? 'Perfil privado: a pessoa precisa aprovar' : undefined}
-            />
+            <View style={{ flexDirection: 'row', gap: spacing.sm, alignSelf: 'stretch' }}>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label={followLabel}
+                  variant={rel.followStatus ? 'secondary' : 'primary'}
+                  loading={busy}
+                  onPress={toggleFollow}
+                  fullWidth
+                  accessibilityHint={p.isPrivate && !rel.followStatus ? 'Perfil privado: a pessoa precisa aprovar' : undefined}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label="Mensagem" variant="secondary" loading={opening} fullWidth onPress={message} />
+              </View>
+            </View>
           )
         }
       />

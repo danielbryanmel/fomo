@@ -86,7 +86,16 @@ export default function SettingsScreen() {
             <Avatar name={form.displayName || '?'} url={form.avatarUrl} seed={username} size={96} />
             <View style={styles.camera}>{uploading ? <ActivityIndicator size="small" color={colors.text} /> : <Camera size={16} color={colors.text} />}</View>
           </PressableScale>
-          {username ? <Text variant="mono" tone="muted">@{username}</Text> : null}
+          {username ? (
+            <UsernameChanger
+              username={username}
+              left={form.usernameChangesLeft}
+              onChanged={async () => {
+                await Promise.all([me.refresh(), current.refresh(), auth.refreshProfile()]);
+                setForm((f) => (f ? { ...f, usernameChangesLeft: 0 } : f));
+              }}
+            />
+          ) : null}
         </Appear>
 
         <Appear index={1} style={styles.group}>
@@ -166,4 +175,53 @@ const styles = StyleSheet.create({
   card: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   link: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   bar: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing.lg, paddingBottom: spacing.xl, backgroundColor: 'rgba(10,10,12,0.94)' },
+});
+
+/** Trocar o @: 1 troca grátis; depois, aviso de que será paga (R$ 9,90, ainda indisponível). */
+function UsernameChanger({ username, left, onChanged }: { username: string; left: number; onChanged: () => Promise<void> }) {
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState(username);
+  const [busy, setBusy] = useState(false);
+  const v = value.trim().toLowerCase().replace(/^@/, '');
+  const valid = /^[a-z0-9_.]{3,30}$/.test(v) && v !== username;
+
+  async function confirm() {
+    setBusy(true);
+    try {
+      await repositories.profiles.changeUsername(v);
+      toast(`Agora você é @${v}`, 'success');
+      setOpen(false);
+      await onChanged();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Não foi possível trocar.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <PressableScale onPress={() => setOpen(true)} style={uStyles.pill} accessibilityRole="button" accessibilityLabel={`@${username}. Trocar @`}>
+        <Text variant="mono" tone="secondary">@{username}</Text>
+        <Text variant="mono" tone="accent">trocar</Text>
+      </PressableScale>
+    );
+  }
+  return (
+    <View style={uStyles.box}>
+      <Field label="novo @" value={value} onChangeText={(t) => setValue(t.toLowerCase().replace(/\s/g, ''))} autoCapitalize="none" autoCorrect={false} max={30}
+        hint={left > 0 ? 'Você tem 1 troca grátis. As próximas custarão R$ 9,90.' : 'Você já usou sua troca grátis. Novas trocas custarão R$ 9,90 (em breve).'} />
+      <View style={uStyles.row}>
+        <Button label="Cancelar" variant="ghost" onPress={() => { setOpen(false); setValue(username); }} />
+        <Button label={left > 0 ? 'Usar troca grátis' : 'Indisponível'} loading={busy} disabled={!valid || left <= 0} onPress={confirm} />
+      </View>
+    </View>
+  );
+}
+
+const uStyles = StyleSheet.create({
+  pill: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center', paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border },
+  box: { alignSelf: 'stretch', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  row: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm },
 });

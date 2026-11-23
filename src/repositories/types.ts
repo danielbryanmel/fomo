@@ -24,6 +24,10 @@ import type {
   NotificationView,
   ProfileSettings,
   UserProfile,
+  ConversationPreview,
+  GroupStatus,
+  GroupView,
+  Message,
 } from '@/types/domain';
 
 /**
@@ -118,6 +122,33 @@ export interface ProfilesRepository {
   block(userId: string): Promise<void>;
   unblock(userId: string): Promise<void>;
   report(userId: string, reason: string): Promise<void>;
+  /** Troca o @ (1 grátis; depois "username_change_paid"). */
+  changeUsername(username: string): Promise<UserProfile>;
+  search(query: string): Promise<UserProfile[]>;
+  followers(userId: string): Promise<UserProfile[]>;
+  following(userId: string): Promise<UserProfile[]>;
+  /** Tira alguém dos MEUS seguidores. */
+  removeFollower(userId: string): Promise<void>;
+}
+
+export interface MessagesRepository {
+  inbox(): Promise<ConversationPreview[]>;
+  /** Abre (ou reaproveita) a conversa 1:1 com alguém. */
+  open(userId: string): Promise<string>;
+  peer(conversationId: string): Promise<UserProfile | null>;
+  list(conversationId: string): Promise<Message[]>;
+  send(conversationId: string, body: string): Promise<Message>;
+  markRead(conversationId: string): Promise<void>;
+  subscribe(conversationId: string, onMessage: (m: Message) => void): () => void;
+}
+
+export interface GroupsRepository {
+  mine(): Promise<GroupView[]>;
+  get(groupId: string): Promise<GroupView | null>;
+  create(eventId: string, name: string, invitees: string[]): Promise<string>;
+  respond(groupId: string, status: Exclude<GroupStatus, 'invited'>): Promise<void>;
+  invite(groupId: string, invitees: string[]): Promise<number>;
+  leave(groupId: string): Promise<void>;
 }
 
 export interface SocialRepository {
@@ -139,4 +170,6 @@ export type Repositories = {
   posts: PostsRepository;
   profiles: ProfilesRepository;
   social: SocialRepository;
+  messages: MessagesRepository;
+  groups: GroupsRepository;
 };

@@ -21,6 +21,7 @@ import type { MapEvent } from '@/types/domain';
 import type { Repositories } from '../types';
 import type { CommentView, NotificationView, ProfileSettings } from '@/types/domain';
 import { computeLiveStatus, isHappeningNow, mockLive } from './live';
+import { mockGroups, mockMessages, mockProfilesExtra } from './social2';
 
 const ME = db.CURRENT_USER_ID;
 const PAGE_SIZE = 5;
@@ -416,7 +417,11 @@ export const mockRepositories: Repositories = {
     async report() {
       await delay(200);
     },
+    ...mockProfilesExtra,
   },
+
+  messages: mockMessages,
+  groups: mockGroups,
 
   social: {
     async listComments(postId) {
@@ -489,6 +494,7 @@ function mySettings(): ProfileSettings {
   return {
     displayName: p.displayName, bio: p.bio, city: db.mySettings.city, avatarUrl: p.avatarUrl, isPrivate: p.isPrivate,
     defaultCheckinVisibility: db.mySettings.defaultCheckinVisibility, isModerator: db.mySettings.isModerator,
+    usernameChangesLeft: 1,
   };
 }
 

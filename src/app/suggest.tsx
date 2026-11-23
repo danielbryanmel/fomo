@@ -16,9 +16,11 @@ import { repositories } from '@/repositories';
 import { colors, radius, spacing } from '@/theme';
 import type { GeoPoint } from '@/types/domain';
 
-const HOURS = [17, 18, 19, 20, 21, 22, 23, 0, 1, 2];
-const DURATIONS = [3, 5, 8, 12];
+const START_HOURS = [12, 14, 16, 17, 18, 19, 20, 21, 22, 23, 0, 1, 2];
+const REPEAT = [0, 4, 8] as const;
+const hh = (h: number) => `${String(h % 24).padStart(2, '0')}h`;
 const WEEK = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+const WEEK_FULL = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 
 type Loc = { point: GeoPoint; source: 'gps' | 'address' | 'bairro'; label: string };
 
@@ -45,7 +47,8 @@ export default function SuggestScreen() {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [day, setDay] = useState(0);
   const [hour, setHour] = useState<number | null>(22);
-  const [duration, setDuration] = useState(5);
+  const [endHour, setEndHour] = useState<number>(4); // "até" — pode virar a madrugada
+  const [repeat, setRepeat] = useState<(typeof REPEAT)[number]>(0);
   const [venue, setVenue] = useState('');
   const [address, setAddress] = useState('');
   const [loc, setLoc] = useState<Loc | null>(null);
@@ -68,6 +71,10 @@ export default function SuggestScreen() {
     return d;
   }, [day, hour, days]);
 
+  // duração = do início até o "até"; se o "até" for menor, é no dia seguinte
+  const duration = hour === null ? 0 : ((endHour - hour + 24) % 24) || 24;
+  const endOptions = hour === null ? [] : Array.from({ length: 14 }, (_, i) => (hour + 1 + i) % 24);
+
   const min = free ? 0 : reais(priceMin);
   const max = free ? 0 : (reais(priceMax) ?? min);
   const ticketOk = !ticket.trim() || /^https:\/\/\S+\.\S+/.test(ticket.trim());
@@ -87,7 +94,7 @@ export default function SuggestScreen() {
     const p = await geocodeAddress(address);
     setLocBusy(false);
     if (p) setLoc({ point: p, source: 'address', label: address.trim() });
-    else toast(Platform.OS === 'web' ? 'Na web, escolha o bairro abaixo.' : 'Endereço não encontrado. Tente com número e bairro.', 'error');
+    else toast('Endereço não encontrado. Tente com número e bairro, ou escolha o bairro abaixo.', 'error');
   }
 
   async function submit() {
@@ -99,6 +106,7 @@ export default function SuggestScreen() {
         endsAt: new Date(startsAt.getTime() + duration * 3_600_000).toISOString(),
         venueName: venue, address: address || null, location: loc.point,
         priceMinCents: min, priceMaxCents: max, ticketUrl: ticket || null, description: description || null,
+        repeatWeeks: repeat,
       });
       if (Platform.OS !== 'web') void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       setDone(true);
@@ -159,12 +167,25 @@ export default function SuggestScreen() {
               );
             })}
           </ScrollView>
+          <Text variant="mono" tone="muted">começa</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hscroll}>
+            {START_HOURS.map((h) => (
+              <Chip key={h} label={hh(h)} selected={hour === h} onPress={() => { setHour(h); setEndHour((h + 6) % 24); }} />
+            ))}
+          </ScrollView>
+          <Text variant="mono" tone="muted">até</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hscroll}>
+            {endOptions.map((h) => <Chip key={h} label={hh(h)} selected={endHour === h} onPress={() => setEndHour(h)} />)}
+          </ScrollView>
+          {hour !== null ? (
+            <Text variant="caption" tone="secondary">De {hh(hour)} até {hh(endHour)}{endHour <= hour ? ' (madrugada)' : ''} · {duration}h de rolê</Text>
+          ) : null}
+          <Text variant="mono" tone="muted">repete</Text>
           <View style={styles.chips}>
-            {HOURS.map((h) => <Chip key={h} label={`${String(h).padStart(2, '0')}h`} selected={hour === h} onPress={() => setHour(h)} />)}
-          </View>
-          <Text variant="mono" tone="muted">duração</Text>
-          <View style={styles.chips}>
-            {DURATIONS.map((h) => <Chip key={h} label={`${h}h`} selected={duration === h} onPress={() => setDuration(h)} />)}
+            {REPEAT.map((r) => (
+              <Chip key={r} selected={repeat === r} onPress={() => setRepeat(r)}
+                label={r === 0 ? 'Não repete' : `${[0, 6].includes(days[day]!.getDay()) ? 'Todo' : 'Toda'} ${WEEK_FULL[days[day]!.getDay()]} · ${r} semanas`} />
+            ))}
           </View>
         </Appear>
 
@@ -222,6 +243,7 @@ export default function SuggestScreen() {
 }
 
 const styles = StyleSheet.create({
+  hscroll: { gap: spacing.sm, paddingRight: spacing.lg },
   root: { flex: 1, backgroundColor: colors.background },
   center: { alignItems: 'center', justifyContent: 'center', gap: spacing.md, paddingHorizontal: spacing.xl },
   content: { paddingHorizontal: spacing.lg, gap: spacing.xl },

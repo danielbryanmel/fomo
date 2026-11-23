@@ -61,6 +61,12 @@ export default function RootLayout() {
             <Stack.Screen name="compose" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
             <Stack.Screen name="report/[id]" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
             <Stack.Screen name="notifications" options={{ headerShown: true, title: 'Notificações' }} />
+            <Stack.Screen name="people" options={{ headerShown: true, title: 'Buscar pessoas' }} />
+            <Stack.Screen name="connections/[username]" options={{ headerShown: true, title: '' }} />
+            <Stack.Screen name="messages/index" options={{ headerShown: true, title: 'Mensagens' }} />
+            <Stack.Screen name="messages/[id]" options={{ headerShown: true, title: '' }} />
+            <Stack.Screen name="group/new" options={{ headerShown: true, title: 'Novo grupo', presentation: 'modal' }} />
+            <Stack.Screen name="group/[id]" options={{ headerShown: true, title: 'Grupo' }} />
             <Stack.Screen name="settings" options={{ headerShown: true, title: 'Editar perfil', presentation: 'modal' }} />
             <Stack.Screen name="suggest" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
             <Stack.Screen name="moderation" options={{ headerShown: true, title: 'Moderação' }} />

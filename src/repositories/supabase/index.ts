@@ -9,6 +9,7 @@ import { requireSupabase } from '@/lib/supabase/client';
 import type { CommentView, NotificationView, PostPhoto, PostView, ProfileSettings, ProfileView, ReviewView, UserProfile } from '@/types/domain';
 import type { Repositories } from '../types';
 import { demoPhoto, isDemoPath } from '@/lib/demoPhotos';
+import { groupsRepo, messagesRepo, profilesExtra } from './social2';
 import { friendlyError, presenceOf, toCategory, toEventView, toLive, toMapEvent, toPost, toProfile } from './mappers';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -95,7 +96,9 @@ const toReview = (r: Row): ReviewView => ({
 const toSettings = (r: Row): ProfileSettings => ({
   displayName: r.display_name, bio: r.bio, city: r.city, avatarUrl: r.avatar_url, isPrivate: r.is_private,
   defaultCheckinVisibility: r.default_checkin_visibility, isModerator: !!r.is_moderator,
+  usernameChangesLeft: Math.max(0, 1 - (r.username_changes ?? 0)),
 });
+const SETTINGS_COLS = 'display_name, bio, city, avatar_url, is_private, default_checkin_visibility, is_moderator, username_changes';
 
 const EVENT_SELECT = '*, category:event_categories(*)';
 
@@ -175,16 +178,20 @@ export const supabaseRepositories: Repositories = {
     },
     async submit(input) {
       const me = await uid();
-      const row = check(
-        await sb().from('events').insert({
-          title: input.title.trim(), description: input.description?.trim() || null, category_id: input.categoryId,
-          starts_at: input.startsAt, ends_at: input.endsAt, venue_name: input.venueName.trim(), address: input.address?.trim() || null,
-          latitude: input.location.latitude, longitude: input.location.longitude,
-          price_min_cents: input.priceMinCents, price_max_cents: input.priceMaxCents, ticket_url: input.ticketUrl?.trim() || null,
-          created_by: me, // status/patrocínio ficam no padrão; a RLS recusa qualquer outro valor
-        }).select(EVENT_SELECT).single(),
-      ) as Row;
-      return toEventView(row, false);
+      const weeks = Math.min(Math.max(input.repeatWeeks ?? 0, 0), 12);
+      const seriesId = weeks > 1 ? Crypto.randomUUID() : null;
+      const WEEK_MS = 7 * 86_400_000;
+      const rows = Array.from({ length: Math.max(weeks, 1) }, (_, k) => ({
+        title: input.title.trim(), description: input.description?.trim() || null, category_id: input.categoryId,
+        starts_at: new Date(Date.parse(input.startsAt) + k * WEEK_MS).toISOString(),
+        ends_at: input.endsAt ? new Date(Date.parse(input.endsAt) + k * WEEK_MS).toISOString() : null,
+        venue_name: input.venueName.trim(), address: input.address?.trim() || null,
+        latitude: input.location.latitude, longitude: input.location.longitude,
+        price_min_cents: input.priceMinCents, price_max_cents: input.priceMaxCents, ticket_url: input.ticketUrl?.trim() || null,
+        created_by: me, series_id: seriesId, // status/patrocínio ficam no padrão; a RLS recusa qualquer outro valor
+      }));
+      const inserted = check(await sb().from('events').insert(rows).select(EVENT_SELECT)) as Row[];
+      return toEventView(inserted[0]!, false);
     },
     async listMine() {
       const me = await uid();
@@ -346,7 +353,7 @@ export const supabaseRepositories: Repositories = {
     },
     async settings() {
       const me = await uid();
-      return toSettings(check(await sb().from('profiles').select('display_name, bio, city, avatar_url, is_private, default_checkin_visibility, is_moderator').eq('id', me).single()) as Row);
+      return toSettings(check(await sb().from('profiles').select(SETTINGS_COLS).eq('id', me).single()) as Row);
     },
     async updateSettings(patch) {
       const me = await uid();
@@ -358,7 +365,7 @@ export const supabaseRepositories: Repositories = {
       if (patch.isPrivate !== undefined) upd.is_private = patch.isPrivate;
       if (patch.defaultCheckinVisibility !== undefined) upd.default_checkin_visibility = patch.defaultCheckinVisibility;
       const row = check(await sb().from('profiles').update(upd).eq('id', me)
-        .select('display_name, bio, city, avatar_url, is_private, default_checkin_visibility, is_moderator').single()) as Row;
+        .select(SETTINGS_COLS).single()) as Row;
       return toSettings(row);
     },
     async uploadAvatar(photo) {
@@ -383,7 +390,11 @@ export const supabaseRepositories: Repositories = {
       const res = await sb().from('reports').insert({ reporter_id: me, target_type: 'profile', target_id: userId, reason });
       if (res.error && !/duplicate|23505/.test(res.error.message)) throw friendlyError(res.error);
     },
+    ...profilesExtra,
   },
+
+  messages: messagesRepo,
+  groups: groupsRepo,
 
   social: {
     async listComments(postId) {

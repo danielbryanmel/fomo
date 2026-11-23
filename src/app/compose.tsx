@@ -1,3 +1,4 @@
+import { StarInput } from '@/components/form/StarInput';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -5,7 +6,6 @@ import { Camera, Check, ImagePlus, MapPin, X } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Star } from 'lucide-react-native';
 import { Chip, ProgressBar, Text, useToast } from '@/components/ui';
 import { MAX_PHOTOS, pickFromLibrary, takePhoto } from '@/features/compose/photos';
 import { useAsync } from '@/hooks/useAsync';
@@ -16,6 +16,9 @@ import { colors, hitTarget, radius, spacing, typography } from '@/theme';
 import type { ContentVisibility, LocalPhoto, MapEvent } from '@/types/domain';
 
 const MAX_CAPTION = 2200;
+const PAST_DAYS = Array.from({ length: 60 }, (_, i) => i);
+const WEEK = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
 const todayISO = (offsetDays = 0) => {
   const d = new Date(Date.now() - offsetDays * 86_400_000);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -217,24 +220,22 @@ export default function ComposeScreen() {
           )}
         </Section>
 
-        {/* Quando */}
+        {/* Quando: hoje, ontem ou qualquer dia dos últimos 60 */}
         <Section label="quando">
-          <View style={styles.chipsWrap}>
-            <Chip label="Hoje" selected={date === todayISO()} onPress={() => setDate(todayISO())} />
-            <Chip label="Ontem" selected={date === todayISO(1)} onPress={() => setDate(todayISO(1))} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayRow}>
+            {PAST_DAYS.map((off) => {
+              const iso = todayISO(off);
+              const d = new Date(`${iso}T12:00:00`);
+              const label = off === 0 ? 'Hoje' : off === 1 ? 'Ontem' : `${WEEK[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`;
+              return <Chip key={off} label={label} selected={date === iso} onPress={() => setDate(iso)} />;
+            })}
             <Chip label="Sem data" selected={date === null} onPress={() => setDate(null)} />
-          </View>
+          </ScrollView>
         </Section>
 
-        {/* Nota */}
+        {/* Nota (aceita meia estrela) */}
         <Section label="sua nota · opcional">
-          <View style={styles.stars} accessibilityRole="adjustable" accessibilityLabel={`Nota: ${rating ?? 'sem nota'}`}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <Pressable key={n} onPress={() => setRating(rating === n ? null : n)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${n} estrela${n > 1 ? 's' : ''}`}>
-                <Star size={30} color={rating && n <= rating ? colors.warning : colors.borderStrong} fill={rating && n <= rating ? colors.warning : 'transparent'} />
-              </Pressable>
-            ))}
-          </View>
+          <StarInput value={rating ?? 0} onChange={(n) => setRating(n || null)} />
         </Section>
 
         {/* Presença */}
@@ -280,6 +281,7 @@ function Section({ label, children }: { label: string; children: ReactNode }) {
 const THUMB = 132;
 
 const styles = StyleSheet.create({
+  dayRow: { gap: spacing.sm, paddingRight: spacing.lg },
   root: { flex: 1, backgroundColor: colors.background },
   top: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
   roundBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
@@ -303,7 +305,6 @@ const styles = StyleSheet.create({
   selectedPlace: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: hitTarget, paddingHorizontal: spacing.md, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.accentPink },
   chips: { gap: spacing.sm },
   chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  stars: { flexDirection: 'row', gap: spacing.sm },
   toggleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginHorizontal: spacing.lg, padding: spacing.lg, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   note: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg },
 });

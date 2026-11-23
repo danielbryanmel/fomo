@@ -155,9 +155,24 @@ export async function readPreciseOnce(): Promise<GeoPoint | null> {
   }
 }
 
-/** Endereço → coordenada pelo geocodificador do sistema (iOS/Android). Na Web devolve null. */
+/**
+ * Endereço → coordenada. Nativo: geocodificador do sistema. Web: OpenStreetMap (Nominatim),
+ * gratuito — uma consulta por toque (respeita a política de uso), com preferência por São Paulo.
+ */
 export async function geocodeAddress(address: string): Promise<GeoPoint | null> {
-  if (Platform.OS === 'web' || !address.trim()) return null;
+  if (!address.trim()) return null;
+  if (Platform.OS === 'web') {
+    try {
+      const q = encodeURIComponent(address.trim());
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&viewbox=-47.2,-23.2,-46.2,-24.0&q=${q}`, {
+        headers: { 'Accept-Language': 'pt-BR' },
+      });
+      const [hit] = (await r.json()) as { lat: string; lon: string }[];
+      return hit ? { latitude: Number(hit.lat), longitude: Number(hit.lon) } : null;
+    } catch {
+      return null;
+    }
+  }
   try {
     const [hit] = await Location.geocodeAsync(address);
     return hit ? { latitude: hit.latitude, longitude: hit.longitude } : null;

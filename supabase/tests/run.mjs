@@ -251,6 +251,39 @@ ok('notificações: cada um só vê as suas', (await as(A, 'select distinct user
 ok('usuário marca notificações como lidas', !(await fails(A, 'update notifications set read_at = now() where read_at is null')));
 ok('usuário NÃO altera tipo da notificação', !!(await fails(A, "update notifications set type = 'like'")));
 
+// ── Social 2 (0010)
+const P6 = '10000000-0000-0000-0000-000000000006';
+ok('nota com meia estrela aceita', !(await fails(C, `select create_post($1, 'texto com nota fracionada para teste', '[]'::jsonb, null, null, null, null, 3.5)`, [P6])) && Number((await one(null, 'select rating from posts where id=$1', [P6])).rating) === 3.5);
+ok('nota 3.3 recusada', /invalid_rating/.test((await fails(C, `select create_post(gen_random_uuid(), 'x', '[]'::jsonb, null, null, null, null, 3.3)`)) ?? ''));
+ok('troca de @ grátis funciona', (await one(D, "select (change_username('davi_novo')).username u")).u === 'davi_novo');
+ok('segunda troca de @ exige pagamento', /username_change_paid/.test((await fails(D, "select change_username('davi_outro')")) ?? ''));
+ok('@ de outra pessoa recusado', /username_taken/.test((await fails(A, "select change_username('caio_c')")) ?? ''));
+ok('cliente NÃO zera o contador de trocas', !!(await fails(D, 'update profiles set username_changes = 0 where id = auth.uid()')));
+const conv = (await one(A, 'select start_conversation($1) c', [C])).c;
+ok('abre conversa 1:1', !!conv);
+ok('reabrir conversa reaproveita a mesma', (await one(C, 'select start_conversation($1) c', [A])).c === conv);
+ok('participante manda mensagem', !(await fails(A, "insert into messages (conversation_id, sender_id, body) values ($1, auth.uid(), 'bora?')", [conv])));
+ok('estranho NÃO lê a conversa', (await as(D, 'select * from messages where conversation_id=$1', [conv])).rows.length === 0);
+ok('estranho NÃO escreve na conversa', !!(await fails(D, "insert into messages (conversation_id, sender_id, body) values ($1, auth.uid(), 'oi')", [conv])));
+ok('não dá para mandar em nome de outro', !!(await fails(C, "insert into messages (conversation_id, sender_id, body) values ($1, $2, 'fake')", [conv, A])));
+ok('destinatário recebe notificação de mensagem', (await one(null, "select count(*)::int n from notifications where user_id=$1 and type='message'", [C])).n === 1);
+const inbox = (await one(C, 'select inbox() i')).i;
+ok('caixa de entrada mostra não lida', inbox.length === 1 && inbox[0].unread === true && inbox[0].other.id === A);
+const g = (await one(A, "select create_group($1, 'Sextou', array[$2, $3]::uuid[]) g", [E, C, D])).g;
+ok('cria grupo com convidados', (await one(null, 'select count(*)::int n from group_members where group_id=$1', [g])).n === 3);
+ok('convidado é notificado', (await one(null, "select count(*)::int n from notifications where user_id=$1 and type='group_invite'", [C])).n === 1);
+await as(C, "select respond_group($1, 'going')", [g]);
+await as(D, "select respond_group($1, 'maybe')", [g]);
+const gj = (await one(C, 'select group_json($1) j', [g])).j;
+ok('grupo mostra confirmados e talvez', gj.counts.going === 2 && gj.counts.maybe === 1 && gj.myStatus === 'going');
+ok('quem não é do grupo NÃO vê o grupo', (await one(B, 'select group_json($1) j', [g])).j === null);
+ok('cliente NÃO se insere em grupo', !!(await fails(B, "insert into group_members (group_id, user_id, status) values ($1, auth.uid(), 'going')", [g])));
+ok('resposta inválida recusada', !!(await fails(C, "select respond_group($1, 'sim')", [g])));
+const sid = '20000000-0000-0000-0000-000000000001';
+for (let k = 0; k < 3; k++) await as(A, `insert into events (title, category_id, starts_at, latitude, longitude, created_by, series_id) values ('Série semanal', '${cat}', now() + interval '1 day' + make_interval(days => ${k * 7}), -23.55, -46.65, auth.uid(), '${sid}')`);
+await as(C, "select moderate_event((select id from events where series_id = $1 order by starts_at limit 1), true)", [sid]);
+ok('aprovar 1 rolê aprova a série inteira', (await one(null, "select count(*)::int n from events where series_id=$1 and status='approved'", [sid])).n === 3);
+
 // ── conteúdo demo (supabase/demo.sql)
 await db.exec(`alter table auth.users add column if not exists instance_id uuid, add column if not exists aud text, add column if not exists role text,
   add column if not exists raw_app_meta_data jsonb, add column if not exists raw_user_meta_data jsonb, add column if not exists updated_at timestamptz;

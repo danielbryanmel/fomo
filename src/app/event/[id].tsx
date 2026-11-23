@@ -1,4 +1,5 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Users } from 'lucide-react-native';
 import { FomoSaveIcon } from '@/components/icons/FomoIcons';
 import { CalendarX, ChevronLeft, ImagePlus, MapPinned, Navigation, Share2, Star, Ticket } from 'lucide-react-native';
 import { type ReactNode, useCallback, useRef } from 'react';
@@ -124,6 +125,9 @@ export default function EventDetailScreen() {
             <Button label="Como chegar" variant="secondary" icon={<Navigation size={18} color={colors.text} />} onPress={() => openDirections(e.latitude, e.longitude, e.venueName ?? e.title)} />
             {e.ticketUrl && !ended ? <Button label="Ingressos" variant="secondary" icon={<Ticket size={18} color={colors.text} />} onPress={() => openExternal(e.ticketUrl!)} /> : null}
             <Button label="Postar fotos daqui" variant="secondary" icon={<ImagePlus size={18} color={colors.text} />} onPress={() => router.push({ pathname: '/compose', params: { eventId: e.id } })} />
+            {!ended ? (
+              <Button label="Combinar com a galera" variant="secondary" icon={<Users size={18} color={colors.text} />} onPress={() => router.push({ pathname: '/group/new', params: { eventId: e.id } })} />
+            ) : null}
           </View>
 
           <Section title={avg ? `Avaliações · ${avg.toFixed(1).replace('.', ',')}` : 'Avaliações'}>

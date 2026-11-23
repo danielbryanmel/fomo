@@ -1,4 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
+import { MessageCircleMore, Users } from 'lucide-react-native';
 import { FomoCommentIcon, FomoLikeIcon } from '@/components/icons/FomoIcons';
 import { Award, BellOff, CalendarCheck, ShieldCheck, UserCheck, UserPlus } from 'lucide-react-native';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
@@ -21,6 +22,9 @@ const COPY: Record<NotificationType, string> = {
   achievement: 'Nova conquista desbloqueada',
   event_approved: 'O rolê que você sugeriu foi aprovado e já está no mapa',
   moderation: 'Atualização da moderação sobre algo seu',
+  message: 'te mandou uma mensagem',
+  group_invite: 'te chamou para um grupo de rolê',
+  group_response: 'respondeu ao convite do seu grupo',
 };
 
 const ICON: Record<NotificationType, ReactNode> = {
@@ -32,12 +36,17 @@ const ICON: Record<NotificationType, ReactNode> = {
   achievement: <Award size={14} color={colors.textOnLive} />,
   event_approved: <CalendarCheck size={14} color={colors.text} />,
   moderation: <ShieldCheck size={14} color={colors.text} />,
+  message: <MessageCircleMore size={14} color={colors.text} />,
+  group_invite: <Users size={14} color={colors.text} />,
+  group_response: <Users size={14} color={colors.text} />,
 };
 
 const exit = FadeOut.duration(motion.fast).reduceMotion(ReduceMotion.System);
 const layout = LinearTransition.springify().damping(motion.spring.soft.damping).reduceMotion(ReduceMotion.System);
 
 function open(n: NotificationView) {
+  if (n.entityType === 'conversation' && n.entityId) return router.push({ pathname: '/messages/[id]', params: { id: n.entityId } });
+  if (n.entityType === 'group' && n.entityId) return router.push({ pathname: '/group/[id]', params: { id: n.entityId } });
   if (n.entityType === 'post' && n.entityId) return router.push({ pathname: '/post/[id]', params: { id: n.entityId } });
   if (n.entityType === 'event' && n.entityId) return router.push({ pathname: '/event/[id]', params: { id: n.entityId } });
   if (n.type === 'achievement') return router.push('/reputation');
