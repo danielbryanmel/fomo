@@ -4,7 +4,7 @@
  */
 import * as Crypto from 'expo-crypto';
 import { requireSupabase } from '@/lib/supabase/client';
-import type { EventPresence, PersonSuggestion, Story, StoryGroup } from '@/types/domain';
+import type { EventPresence, GroupLocation, PersonSuggestion, Story, StoryGroup } from '@/types/domain';
 import type { CheckinsRepository, GroupsRepository, ProfilesRepository, StoriesRepository } from '../types';
 import { friendlyError, toProfile } from './mappers';
 
@@ -95,7 +95,10 @@ export const storiesRepo: StoriesRepository = {
   },
 };
 
-export const profilesSuggest: Pick<ProfilesRepository, 'suggestions'> = {
+export const profilesSuggest: Pick<ProfilesRepository, 'suggestions' | 'setDiscreetMode'> = {
+  async setDiscreetMode(on) {
+    check(await sb().rpc('set_discreet_mode', { p_on: on }));
+  },
   async suggestions(limit = 20) {
     const { data: s } = await sb().auth.getSession();
     if (!s.session) return [];
@@ -104,7 +107,22 @@ export const profilesSuggest: Pick<ProfilesRepository, 'suggestions'> = {
   },
 };
 
-export const groupsSafety: Pick<GroupsRepository, 'arrivedHome'> = {
+export const groupsSafety: Pick<GroupsRepository, 'arrivedHome' | 'locations' | 'shareLocation' | 'stopSharing'> = {
+  async locations(groupId) {
+    return ((check(await sb().rpc('group_locations_json', { p_group: groupId })) ?? []) as Row[]).map((l): GroupLocation => ({
+      profile: toProfile(l.profile), latitude: l.latitude, longitude: l.longitude, accuracyM: l.accuracyM ?? null, updatedAt: l.updatedAt, expiresAt: l.expiresAt,
+    }));
+  },
+  async shareLocation(groupId, point, accuracyM, minutes) {
+    return check(await sb().rpc('share_group_location', {
+      p_group: groupId, p_lat: point.latitude, p_lng: point.longitude,
+      p_accuracy: accuracyM == null ? null : Math.round(accuracyM), p_minutes: minutes ?? null,
+    })) as string;
+  },
+  async stopSharing(groupId) {
+    const me = await uid();
+    check(await sb().from('group_locations').delete().eq('group_id', groupId).eq('user_id', me));
+  },
   async arrivedHome(groupId) {
     return check(await sb().rpc('arrived_home', { p_group: groupId })) as number;
   },

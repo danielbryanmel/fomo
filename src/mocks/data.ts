@@ -197,6 +197,7 @@ export const blocks = new Set<string>();
 export const mySettings = {
   city: 'São Paulo' as string | null,
   defaultCheckinVisibility: 'followers' as 'public' | 'followers' | 'friends' | 'private',
+  discreetMode: false,
   isModerator: true,
 };
 

@@ -33,6 +33,7 @@ import type {
   EventPresence,
   PersonSuggestion,
   StoryGroup,
+  GroupLocation,
 } from '@/types/domain';
 
 /**
@@ -136,6 +137,7 @@ export interface ProfilesRepository {
   removeFollower(userId: string): Promise<void>;
   /** Sugestões de amizade com o motivo ("Segue você", "2 amigos em comum"...). */
   suggestions(limit?: number): Promise<PersonSuggestion[]>;
+  setDiscreetMode(on: boolean): Promise<void>;
 }
 
 export interface CheckinsRepository {
@@ -177,6 +179,11 @@ export interface GroupsRepository {
   friendsGoing(eventId: string): Promise<UserProfile[]>;
   /** "Cheguei bem": avisa o grupo. Devolve quantas pessoas foram avisadas (0 = já tinha avisado). */
   arrivedHome(groupId: string): Promise<number>;
+  /** Localização ao vivo do grupo (só de quem compartilhou e só enquanto não vence). */
+  locations(groupId: string): Promise<GroupLocation[]>;
+  /** minutes: só na primeira vez (define até quando). Depois, só atualiza a posição. */
+  shareLocation(groupId: string, point: GeoPoint, accuracyM: number | null, minutes?: number): Promise<string>;
+  stopSharing(groupId: string): Promise<void>;
 }
 
 export interface SocialRepository {

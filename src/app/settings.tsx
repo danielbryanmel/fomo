@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Camera, ChevronRight, Lock, LogOut, MapPinned, ShieldCheck } from 'lucide-react-native';
+import { Camera, ChevronRight, EyeOff, Lock, LogOut, MapPinned, ShieldCheck } from 'lucide-react-native';
 import { type ReactNode, useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Field } from '@/components/form/Field';
@@ -115,9 +115,28 @@ export default function SettingsScreen() {
             value={form.isPrivate}
             onChange={(v) => set('isPrivate', v)}
           />
+          <ToggleRow
+            icon={<EyeOff size={18} color={colors.textSecondary} />}
+            label="Modo discreto"
+            description={form.discreetMode
+              ? 'Ligado: todo check-in é anônimo, stories não marcam o rolê e você para de compartilhar localização com grupos. Vale também para o que você fez nas últimas 24 h.'
+              : 'Um toque para sumir: todo check-in vira anônimo (ainda conta no rolê) e stories não mostram onde você está.'}
+            value={form.discreetMode}
+            onChange={async (v) => {
+              try {
+                await repositories.profiles.setDiscreetMode(v);
+                const next = { ...form, discreetMode: v, defaultCheckinVisibility: v ? 'private' as const : form.defaultCheckinVisibility };
+                setForm(next);
+                current.setData((c) => (c ? { ...c, discreetMode: v, defaultCheckinVisibility: next.defaultCheckinVisibility } : c));
+                toast(v ? 'Modo discreto ligado' : 'Modo discreto desligado', 'success');
+              } catch (e) {
+                toast(e instanceof Error ? e.message : 'Não foi possível mudar agora.', 'error');
+              }
+            }}
+          />
           <View style={styles.card}>
             <OptionGrid label="quem vê seu check-in (padrão) · anônimo ainda conta no rolê" options={VIS} value={form.defaultCheckinVisibility} onChange={(v) => set('defaultCheckinVisibility', v)} />
-            <Text variant="caption" tone="muted">Nunca mostramos sua localização em tempo real. Isto vale para check-ins novos.</Text>
+            <Text variant="caption" tone="muted">Sua localização em tempo real só aparece quando você liga o compartilhamento com um grupo, e some sozinha no fim. Isto vale para check-ins novos.</Text>
           </View>
         </Appear>
 

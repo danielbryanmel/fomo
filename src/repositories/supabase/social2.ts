@@ -94,7 +94,7 @@ export const messagesRepo: MessagesRepository = {
   },
 };
 
-export const groupsRepo: Omit<GroupsRepository, 'arrivedHome'> = {
+export const groupsRepo: Omit<GroupsRepository, 'arrivedHome' | 'locations' | 'shareLocation' | 'stopSharing'> = {
   async mine() {
     return ((check(await sb().rpc('my_groups')) ?? []) as Row[]).map(toGroup);
   },

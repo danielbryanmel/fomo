@@ -499,6 +499,7 @@ function mySettings(): ProfileSettings {
     displayName: p.displayName, bio: p.bio, city: db.mySettings.city, avatarUrl: p.avatarUrl, isPrivate: p.isPrivate,
     defaultCheckinVisibility: db.mySettings.defaultCheckinVisibility, isModerator: db.mySettings.isModerator,
     usernameChangesLeft: 1,
+    discreetMode: db.mySettings.discreetMode,
   };
 }
 

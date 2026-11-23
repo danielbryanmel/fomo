@@ -114,6 +114,8 @@ export function friendlyError(e: unknown): Error {
     not_authenticated: 'Entre na sua conta para continuar.',
     username_change_paid: 'Você já usou sua troca grátis de @. Novas trocas custarão R$ 9,90 (em breve).',
     invalid_rating: 'A nota vai de 0,5 a 5, em meias estrelas.',
+    invalid_duration: 'Escolha entre 15 min e 4 h.',
+    not_sharing: 'Escolha por quanto tempo compartilhar.',
     checkin_closed: 'O check-in abre 3 h antes do rolê e fecha 2 h depois do fim.',
     invalid_reveal: 'Escolha quando sua presença pode aparecer.',
     dm_not_allowed: 'Esse perfil é privado: só dá para mandar mensagem se um de vocês seguir o outro.',

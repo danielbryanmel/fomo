@@ -3,6 +3,7 @@ import { House, MapPinned, UserPlus, Users } from 'lucide-react-native';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { FriendPicker } from '@/components/group/FriendPicker';
+import { LiveLocation } from '@/components/group/LiveLocation';
 import { Polls } from '@/components/group/Polls';
 import { RespondButtons, STATUS_LABEL, whenLabel } from '@/components/group/GroupCard';
 import { Appear } from '@/components/motion';
@@ -23,6 +24,7 @@ export default function GroupScreen() {
   const [inviting, setInviting] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
   const [leave, setLeave] = useState(false);
+  const settings = useAsync(() => repositories.profiles.settings().catch(() => null), []);
 
   if (group.loading && !group.data) return <Screen><View style={styles.pad}><Skeleton height={140} /><Skeleton height={60} /></View></Screen>;
   if (!group.data) return <Screen><StateView icon={<Users size={26} color={colors.textSecondary} />} title="Grupo indisponível" description="Você não faz parte dele, ou ele foi apagado." /></Screen>;
@@ -30,6 +32,7 @@ export default function GroupScreen() {
 
   const started = Date.now() >= new Date(g.event.startsAt).getTime();
   const inIt = g.myStatus === 'going' || g.myStatus === 'maybe';
+  const discreet = !!settings.data?.discreetMode;
 
   async function arrived() {
     try {
@@ -81,6 +84,8 @@ export default function GroupScreen() {
             <Button label={`Convidar ${picked.length || ''}`.trim()} disabled={!picked.length} onPress={sendInvites} fullWidth />
           </View>
         ) : null}
+
+        {inIt || g.myStatus === 'going' ? <LiveLocation groupId={g.id} canShare={inIt && !discreet} /> : null}
 
         <Polls groupId={g.id} polls={g.polls ?? []} canCreate={g.myStatus === 'going' || g.myStatus === 'maybe'} onChange={() => void group.refresh()} />
 

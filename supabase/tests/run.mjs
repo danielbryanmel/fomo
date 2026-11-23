@@ -37,7 +37,7 @@ async function as(user, sql, params) {
   try {
     return await db.query(sql, params);
   } finally {
-    await db.exec('reset role');
+    await db.exec("reset role; select set_config('request.jwt.claim.sub', '', false);");
   }
 }
 async function fails(user, sql, params) {
@@ -367,6 +367,42 @@ ok('sugestões: não expõe campos internos de pontuação', sugD.every((x) => !
 ok('cheguei bem: avisa o grupo', (await one(C, 'select arrived_home($1) n', [g])).n === 2);
 ok('cheguei bem: não repete o aviso', (await one(C, 'select arrived_home($1) n', [g])).n === 0);
 ok('cheguei bem: quem não é do grupo NÃO dispara', !!(await fails(B, 'select arrived_home($1)', [g])));
+
+// ── Social 5: localização com o grupo, modo discreto
+ok('localização: precisa dizer por quanto tempo na 1ª vez', /not_sharing/.test((await fails(C, 'select share_group_location($1, -23.55, -46.65, 20)', [g])) ?? ''));
+ok('localização: duração fora do limite recusada', !!(await fails(C, 'select share_group_location($1, -23.55, -46.65, 20, 600)', [g])));
+await as(C, 'select share_group_location($1, -23.55, -46.65, 20, 60)', [g]);
+const locA = (await one(A, 'select group_locations_json($1) l', [g])).l;
+ok('localização: membro confirmado vê', locA.length === 1 && locA[0].profile.id === C);
+ok('localização: quem não é do grupo NÃO vê', (await one(B, 'select group_locations_json($1) l', [g])).l.length === 0
+  && (await as(B, 'select * from group_locations where group_id=$1', [g])).rows.length === 0);
+ok('localização: quem não é do grupo NÃO compartilha', !!(await fails(B, 'select share_group_location($1, -23.5, -46.6, 10, 30)', [g])));
+const exp1 = (await one(null, 'select expires_at from group_locations where group_id=$1 and user_id=$2', [g, C])).expires_at;
+await as(C, 'select share_group_location($1, -23.56, -46.66, 15)', [g]);
+const row2 = await one(null, 'select expires_at, latitude from group_locations where group_id=$1 and user_id=$2', [g, C]);
+ok('localização: atualizar posição NÃO estica o prazo', +new Date(row2.expires_at) === +new Date(exp1) && Number(row2.latitude) === -23.56);
+ok('localização: cliente NÃO insere direto', !!(await fails(A, 'insert into group_locations (group_id, user_id, latitude, longitude, expires_at) values ($1, auth.uid(), 0, 0, now() + interval \'9 days\')', [g])));
+await db.query("update group_locations set expires_at = now() - interval '1 minute' where group_id=$1 and user_id=$2", [g, C]);
+ok('localização: vencida some', (await one(A, 'select group_locations_json($1) l', [g])).l.length === 0);
+await as(C, 'select share_group_location($1, -23.55, -46.65, 20, 30)', [g]);
+await as(C, "select respond_group($1, 'declined')", [g]);
+ok('localização: recusar o grupo para de compartilhar', (await one(null, 'select count(*)::int n from group_locations where group_id=$1 and user_id=$2', [g, C])).n === 0);
+await as(C, "select respond_group($1, 'going')", [g]);
+
+await as(D, 'select share_group_location($1, -23.5, -46.6, 10, 30)', [g]);
+await as(D, 'select set_discreet_mode(true)');
+ok('modo discreto: check-ins recentes viram anônimos', (await one(null, 'select visibility from check_ins where user_id=$1 and event_id=$2', [D, E])).visibility === 'private');
+ok('modo discreto: para de compartilhar localização', (await one(null, 'select count(*)::int n from group_locations where user_id=$1', [D])).n === 0);
+await as(D, "select check_in($1, 'public', 0)", [E]);
+ok('modo discreto: check-in público vira anônimo no servidor', (await one(null, 'select visibility from check_ins where user_id=$1 and event_id=$2', [D, E])).visibility === 'private');
+await as(D, "update check_ins set visibility = 'public' where user_id = auth.uid()");
+ok('modo discreto: não dá para tornar público por fora', (await one(null, 'select visibility from check_ins where user_id=$1 and event_id=$2', [D, E])).visibility === 'private');
+const S2 = '30000000-0000-0000-0000-000000000002';
+await as(D, `select create_story($1, $2, 1080, 1440, $3, null, 'public', true)`, [S2, `${D}/stories/${S2}.jpg`, E]);
+ok('modo discreto: story não marca o rolê', (await one(null, 'select event_id from stories where id=$1', [S2])).event_id === null);
+ok('cliente NÃO liga o modo discreto de outra pessoa', (await as(D, 'update profiles set discreet_mode = false where id = auth.uid()').then(() => 'ok').catch(() => 'err')) === 'err'
+  || (await one(null, 'select discreet_mode from profiles where id=$1', [D])).discreet_mode === true);
+await as(D, 'select set_discreet_mode(false)');
 
 // ── conteúdo demo (supabase/demo.sql)
 await db.exec(`alter table auth.users add column if not exists instance_id uuid, add column if not exists aud text, add column if not exists role text,

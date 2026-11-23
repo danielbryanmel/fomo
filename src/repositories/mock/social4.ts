@@ -3,7 +3,7 @@
  * para o modo demonstração. Não é segurança, é simulação.
  */
 import * as db from '@/mocks/data';
-import type { CheckinVisibility, EventPresence, Story, StoryGroup } from '@/types/domain';
+import type { CheckinVisibility, EventPresence, GroupLocation, Story, StoryGroup } from '@/types/domain';
 import type { CheckinsRepository, GroupsRepository, ProfilesRepository, StoriesRepository } from '../types';
 
 const ME = db.CURRENT_USER_ID;
@@ -91,7 +91,15 @@ export const mockStories: StoriesRepository = {
   },
 };
 
-export const mockSuggest: Pick<ProfilesRepository, 'suggestions'> = {
+export const mockSuggest: Pick<ProfilesRepository, 'suggestions' | 'setDiscreetMode'> = {
+  async setDiscreetMode(on) {
+    await delay();
+    db.mySettings.discreetMode = on;
+    if (on) {
+      db.mySettings.defaultCheckinVisibility = 'private';
+      checkins.forEach((m) => { const c = m.get(ME); if (c) c.visibility = 'private'; });
+    }
+  },
   async suggestions(limit = 20) {
     await delay();
     const following = new Set(db.follows.filter((f) => f.followerId === ME).map((f) => f.followeeId));
@@ -105,9 +113,30 @@ export const mockSuggest: Pick<ProfilesRepository, 'suggestions'> = {
   },
 };
 
-export const mockGroupsSafety: Pick<GroupsRepository, 'arrivedHome'> = {
+const locs = new Map<string, GroupLocation[]>([
+  ['g-1', [{ profile: byId('u-lia'), latitude: -23.5262, longitude: -46.6662, accuracyM: 25, updatedAt: new Date(Date.now() - 2 * 60_000).toISOString(), expiresAt: new Date(Date.now() + 50 * 60_000).toISOString() }]],
+]);
+
+export const mockGroupsSafety: Pick<GroupsRepository, 'arrivedHome' | 'locations' | 'shareLocation' | 'stopSharing'> = {
   async arrivedHome() {
     await delay();
     return 3;
+  },
+  async locations(groupId) {
+    await delay(120);
+    return (locs.get(groupId) ?? []).filter((l) => new Date(l.expiresAt).getTime() > Date.now());
+  },
+  async shareLocation(groupId, point, accuracyM, minutes) {
+    await delay(120);
+    const list = locs.get(groupId) ?? [];
+    const mine = list.find((l) => l.profile.id === ME);
+    if (!mine && !minutes) throw new Error('Escolha por quanto tempo compartilhar.');
+    const expiresAt = minutes ? new Date(Date.now() + minutes * 60_000).toISOString() : mine!.expiresAt;
+    const next = { profile: byId(ME), ...point, accuracyM, updatedAt: new Date().toISOString(), expiresAt };
+    locs.set(groupId, [next, ...list.filter((l) => l.profile.id !== ME)]);
+    return expiresAt;
+  },
+  async stopSharing(groupId) {
+    locs.set(groupId, (locs.get(groupId) ?? []).filter((l) => l.profile.id !== ME));
   },
 };

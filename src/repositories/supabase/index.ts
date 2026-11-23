@@ -98,8 +98,9 @@ const toSettings = (r: Row): ProfileSettings => ({
   displayName: r.display_name, bio: r.bio, city: r.city, avatarUrl: r.avatar_url, isPrivate: r.is_private,
   defaultCheckinVisibility: r.default_checkin_visibility, isModerator: !!r.is_moderator,
   usernameChangesLeft: Math.max(0, 1 - (r.username_changes ?? 0)),
+  discreetMode: !!r.discreet_mode,
 });
-const SETTINGS_COLS = 'display_name, bio, city, avatar_url, is_private, default_checkin_visibility, is_moderator, username_changes';
+const SETTINGS_COLS = 'display_name, bio, city, avatar_url, is_private, default_checkin_visibility, is_moderator, username_changes, discreet_mode';
 
 const EVENT_SELECT = '*, category:event_categories(*)';
 

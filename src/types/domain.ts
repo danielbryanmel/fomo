@@ -324,6 +324,8 @@ export type ProfileSettings = {
   isModerator: boolean;
   /** Trocas de @ gratuitas restantes (1 no total). */
   usernameChangesLeft: number;
+  /** Modo discreto: todo check-in vira anônimo e stories não marcam o rolê (garantido no servidor). */
+  discreetMode: boolean;
 };
 
 export type EventSubmission = {
@@ -420,3 +422,12 @@ export type CreateStoryInput = {
 };
 
 export type PersonSuggestion = { profile: UserProfile; reason: string };
+
+export type GroupLocation = {
+  profile: UserProfile;
+  latitude: number;
+  longitude: number;
+  accuracyM: number | null;
+  updatedAt: ISODateString;
+  expiresAt: ISODateString;
+};

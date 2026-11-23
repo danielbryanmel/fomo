@@ -57,8 +57,9 @@ export default function CheckinScreen() {
     const me = presence.data?.me;
     const base = me?.visibility ?? settings.data?.defaultCheckinVisibility;
     if (base) setVis(base === 'followers' ? 'friends' : base);
+    if (settings.data?.discreetMode) setVis('private');
     if (me?.revealAt && new Date(me.revealAt).getTime() > Date.now()) setReveal('2h');
-  }, [presence.data?.me, settings.data?.defaultCheckinVisibility]);
+  }, [presence.data?.me, settings.data?.defaultCheckinVisibility, settings.data?.discreetMode]);
 
   if (event.loading || presence.loading) return <Screen><View style={styles.pad}><Skeleton height={120} /><Skeleton height={220} /></View></Screen>;
   const e = event.data;
@@ -73,6 +74,7 @@ export default function CheckinScreen() {
   }
 
   const me = presence.data?.me ?? null;
+  const discreet = !!settings.data?.discreetMode;
   const hidden = vis === 'private' || reveal !== 'now';
   const canPhoto = !hidden; // uma foto agora entregaria que você está lá
 
@@ -126,7 +128,14 @@ export default function CheckinScreen() {
           </View>
         </Appear>
 
-        <View style={styles.section}>
+        {discreet ? (
+          <View style={styles.safe}>
+            <EyeOff size={20} color={colors.accentPink} />
+            <Text variant="caption" tone="secondary" style={styles.flex}>Modo discreto ligado: seu check-in é sempre anônimo. Você muda isso em Configurações.</Text>
+          </View>
+        ) : null}
+
+        <View style={[styles.section, discreet && styles.disabled]} pointerEvents={discreet ? 'none' : 'auto'}>
           <Text variant="mono" tone="muted">quem vê que você está aqui</Text>
           {OPTIONS.map((o, i) => {
             const on = vis === o.key;
@@ -159,7 +168,7 @@ export default function CheckinScreen() {
         <View style={styles.safe}>
           <ShieldCheck size={20} color={colors.accentPink} />
           <Text variant="caption" tone="secondary" style={styles.flex}>
-            Sua presença sempre ajuda o termômetro do rolê, mas só como número — e o número só aparece a partir de 3 pessoas. O FOMO nunca mostra sua localização exata.
+            Sua presença sempre ajuda o termômetro do rolê, mas só como número — e o número só aparece a partir de 3 pessoas. O check-in nunca mostra sua localização exata.
           </Text>
         </View>
 
@@ -209,6 +218,7 @@ const styles = StyleSheet.create({
   radioOn: { borderColor: colors.accentPink },
   radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.accentPink },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  disabled: { opacity: 0.45 },
   safe: { flexDirection: 'row', gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: 'rgba(232,54,140,0.3)', alignItems: 'flex-start' },
   row: { flexDirection: 'row', gap: spacing.sm },
   photoRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
