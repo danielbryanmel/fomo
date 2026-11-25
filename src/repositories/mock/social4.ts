@@ -2,6 +2,7 @@
  * MOCK de check-in seguro, stories, sugestões e "cheguei bem" — espelha as regras do banco (0012)
  * para o modo demonstração. Não é segurança, é simulação.
  */
+import { demoPhoto } from '@/lib/demoPhotos';
 import * as db from '@/mocks/data';
 import type { CheckinVisibility, EventPresence, GroupLocation, Story, StoryGroup } from '@/types/domain';
 import type { CheckinsRepository, GroupsRepository, ProfilesRepository, StoriesRepository } from '../types';
@@ -39,11 +40,11 @@ export const mockCheckins: CheckinsRepository = {
   },
 };
 
-const PHOTO = (seed: number) => ({ uri: `https://picsum.photos/seed/fomo${seed}/1080/1920` });
+const PHOTO = (seed: number) => demoPhoto(`demo/night-${seed}.jpg`)!;
 const stories: (Story & { authorId: string; viewers: string[] })[] = [
   { id: 'st-1', authorId: 'u-lia', photo: PHOTO(1), width: 1080, height: 1920, caption: 'esquenta tá on', isDual: true, visibility: 'followers',
     event: { id: 'e-1', title: 'Baile da Lua' }, createdAt: new Date(Date.now() - 40 * 60_000).toISOString(), expiresAt: new Date(Date.now() + 23 * 3600_000).toISOString(), seen: false, liked: false, views: null, likes: null, viewers: [] },
-  { id: 'st-2', authorId: 'u-teo', photo: PHOTO(2), width: 1080, height: 1920, caption: null, isDual: false, visibility: 'public',
+  { id: 'st-2', authorId: 'u-teo', photo: PHOTO(4), width: 1080, height: 1920, caption: 'vinil + drink da casa', isDual: false, visibility: 'public',
     event: null, createdAt: new Date(Date.now() - 3 * 3600_000).toISOString(), expiresAt: new Date(Date.now() + 21 * 3600_000).toISOString(), seen: false, liked: false, views: null, likes: null, viewers: [] },
 ];
 
