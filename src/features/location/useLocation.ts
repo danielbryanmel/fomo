@@ -271,3 +271,15 @@ export async function geocodeAddress(address: string): Promise<GeoPoint | null> 
     return null;
   }
 }
+
+/** Última posição guardada (sem pedir nada ao navegador). Usada para atalhos, nunca para validar presença. */
+export async function lastKnownPoint(maxAgeMs = 3 * 3600_000): Promise<GeoPoint | null> {
+  try {
+    const raw = await AsyncStorage.getItem(LAST_KEY);
+    if (!raw) return null;
+    const l = JSON.parse(raw) as { point: GeoPoint; at: number };
+    return Date.now() - l.at < maxAgeMs ? l.point : null;
+  } catch {
+    return null;
+  }
+}

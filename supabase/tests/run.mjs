@@ -478,6 +478,12 @@ ok('avaliação: aspectos inválidos são recusados', !!(await fails(B, "insert 
 await as(B, "insert into reviews (author_id, event_id, rating, aspects) values (auth.uid(), $1, 4, array['som','lotacao'])", [BAILE]);
 await as(B, "update reviews set aspects = array['fila'] where author_id = auth.uid() and event_id = $1", [BAILE]);
 ok('avaliação: salva e edita "o que pesou"', (await one(B, 'select aspects from reviews where author_id = auth.uid() and event_id = $1', [BAILE])).aspects.join() === 'fila');
+// "Sua noite tá pronta": quem postou ontem à noite recebe 1 aviso por dia; cliente não dispara
+await db.query("insert into posts (author_id, body, created_at) values ($1, 'noite boa', ((now() at time zone 'America/Sao_Paulo')::date - 1 + time '23:30') at time zone 'America/Sao_Paulo')", [A]);
+await db.query('select send_night_recaps()');
+await db.query('select send_night_recaps()');
+ok('minha noite: aviso enviado uma vez só', (await db.query("select count(*)::int n from notifications where user_id = $1 and type = 'night_recap'", [A])).rows[0].n === 1);
+ok('minha noite: cliente NÃO dispara avisos', !!(await fails(A, 'select send_night_recaps()')));
 const trayB = (await one(B, 'select stories_tray() t')).t;
 ok('demo social: pessoa real vê stories dos demo que segue', trayB.filter((g) => g.author.is_demo).length >= 4 && trayB.every((g) => g.stories.every((s) => new Date(s.expiresAt) > new Date())));
 ok('demo social: presença do Baile aparece (≥3)', (await one(B, 'select event_presence($1) p', [BAILE])).p.count >= 3);

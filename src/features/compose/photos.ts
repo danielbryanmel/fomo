@@ -12,7 +12,7 @@ const JPEG_QUALITY = 0.8;
 export const STORY_W = 1080;
 export const STORY_H = 1920;
 
-type Target = { maxSide?: number; cover?: { width: number; height: number } };
+type Target = { maxSide?: number; cover?: { width: number; height: number }; focus?: { x: number; y: number } };
 
 /**
  * Web: desenha a foto direto num canvas JÁ no tamanho final.
@@ -42,8 +42,8 @@ async function webPrepare(uri: string, t: Target): Promise<LocalPhoto> {
     const r = Math.max(w / iw, h / ih);
     sw = w / r;
     sh = h / r;
-    sx = (iw - sw) / 2;
-    sy = (ih - sh) / 2;
+    sx = (iw - sw) * (t.focus?.x ?? 0.5);
+    sy = (ih - sh) * (t.focus?.y ?? 0.5);
   } else {
     const k = Math.min(1, (t.maxSide ?? MAX_SIDE) / Math.max(iw, ih));
     w = Math.round(iw * k);
@@ -62,13 +62,13 @@ async function webPrepare(uri: string, t: Target): Promise<LocalPhoto> {
 }
 
 /** Recorta (como object-fit: cover) para o tamanho exato. Usado nos stories (1080×1920). */
-export async function prepareCover(asset: { uri: string; width: number; height: number }, width = STORY_W, height = STORY_H): Promise<LocalPhoto> {
-  if (Platform.OS === 'web') return webPrepare(asset.uri, { cover: { width, height } });
+export async function prepareCover(asset: { uri: string; width: number; height: number }, width = STORY_W, height = STORY_H, focus = { x: 0.5, y: 0.5 }): Promise<LocalPhoto> {
+  if (Platform.OS === 'web') return webPrepare(asset.uri, { cover: { width, height }, focus });
   const r = Math.max(width / asset.width, height / asset.height);
   const cw = Math.round(width / r);
   const ch = Math.round(height / r);
   const ctx = ImageManipulator.manipulate(asset.uri);
-  ctx.crop({ originX: Math.round((asset.width - cw) / 2), originY: Math.round((asset.height - ch) / 2), width: cw, height: ch });
+  ctx.crop({ originX: Math.round((asset.width - cw) * focus.x), originY: Math.round((asset.height - ch) * focus.y), width: cw, height: ch });
   ctx.resize({ width, height });
   const saved = await (await ctx.renderAsync()).saveAsync({ format: SaveFormat.JPEG, compress: JPEG_QUALITY });
   return { uri: saved.uri, width: saved.width, height: saved.height };

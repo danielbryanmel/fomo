@@ -15,3 +15,12 @@ const DEMO: Record<string, number> = {
 export const isDemoPath = (path: string) => path.startsWith('demo/');
 /** Aceita sufixo "#…" (stories demo reaproveitam a mesma foto com caminhos únicos). */
 export const demoPhoto = (path: string): number | undefined => DEMO[path.split('#')[0]!];
+
+/** Capa para rolê de demonstração sem foto: uma das fotos empacotadas, sempre a mesma por rolê. */
+export const demoCover = (id: string) => {
+  const h = [...id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 9973, 7);
+  return `demo/night-${(h % 6) + 1}.jpg`;
+};
+
+/** Converte uma URL de capa (remota ou "demo/…") em fonte de imagem. */
+export const coverSource = (uri: string): { uri: string } | number => (isDemoPath(uri) ? (demoPhoto(uri) ?? { uri }) : { uri });

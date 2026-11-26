@@ -305,7 +305,8 @@ export type CommentView = {
 
 export type NotificationType =
   | 'follow' | 'follow_request' | 'follow_accepted' | 'like' | 'comment' | 'achievement' | 'event_approved' | 'moderation'
-  | 'message' | 'group_invite' | 'group_response' | 'event_reminder' | 'group_poll' | 'arrived_home' | 'story_like';
+  | 'message' | 'group_invite' | 'group_response' | 'event_reminder' | 'group_poll' | 'arrived_home' | 'story_like'
+  | 'night_recap';
 
 export type NotificationView = {
   id: UUID;
@@ -313,6 +314,8 @@ export type NotificationView = {
   actor: UserProfile | null;
   entityType: string | null;
   entityId: UUID | null;
+  /** Nome do alvo quando ajuda a entender (ex.: nome do grupo). */
+  entityLabel?: string | null;
   readAt: ISODateString | null;
   createdAt: ISODateString;
 };

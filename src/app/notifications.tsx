@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { AlarmClock, Heart, House, MessageCircleMore, Users, Vote } from 'lucide-react-native';
+import { AlarmClock, Heart, House, MessageCircleMore, MoonStar, Users, Vote } from 'lucide-react-native';
 import { FomoCommentIcon, FomoLikeIcon } from '@/components/icons/FomoIcons';
 import { Award, BellOff, CalendarCheck, ShieldCheck, UserCheck, UserPlus } from 'lucide-react-native';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
@@ -30,6 +30,14 @@ const COPY: Record<NotificationType, string> = {
   group_poll: 'abriu uma enquete no grupo',
   arrived_home: 'avisou que chegou bem em casa',
   story_like: 'curtiu seu story',
+  night_recap: 'Sua noite tá pronta. Veja o resumo e compartilhe.',
+};
+
+/** Versão com o nome do grupo (o nome vem em negrito logo depois). */
+const GROUP_COPY: Partial<Record<NotificationType, string>> = {
+  group_invite: 'te chamou para o grupo ',
+  group_response: 'respondeu ao convite de ',
+  group_poll: 'abriu uma enquete em ',
 };
 
 const ICON: Record<NotificationType, ReactNode> = {
@@ -48,12 +56,14 @@ const ICON: Record<NotificationType, ReactNode> = {
   group_poll: <Vote size={14} color={colors.text} />,
   arrived_home: <House size={14} color={colors.text} />,
   story_like: <Heart size={14} color={colors.text} />,
+  night_recap: <MoonStar size={18} color={colors.background} />,
 };
 
 const exit = FadeOut.duration(motion.fast).reduceMotion(ReduceMotion.System);
 const layout = LinearTransition.springify().damping(motion.spring.soft.damping).reduceMotion(ReduceMotion.System);
 
-function open(n: NotificationView, meId?: string) {
+function open(n: NotificationView, meId?: string, meUsername?: string) {
+  if (n.type === 'night_recap') return meUsername ? router.push({ pathname: '/recap/[username]', params: { username: meUsername } }) : undefined;
   if (n.entityType === 'story') return meId ? router.push({ pathname: '/story/[id]', params: { id: meId } }) : undefined;
   if (n.entityType === 'conversation' && n.entityId) return router.push({ pathname: '/messages/[id]', params: { id: n.entityId } });
   if (n.entityType === 'group' && n.entityId) return router.push({ pathname: '/group/[id]', params: { id: n.entityId } });
@@ -66,6 +76,7 @@ function open(n: NotificationView, meId?: string) {
 /** Notificações (tempo real) + solicitações para seguir no topo. */
 export default function NotificationsScreen() {
   const meId = useAuth().profile?.id;
+  const meUsername = useAuth().profile?.username;
   const toast = useToast();
   const list = useAsync(() => repositories.social.notifications(), []);
   const requests = useAsync(() => repositories.social.followRequests(), []);
@@ -142,19 +153,19 @@ export default function NotificationsScreen() {
           return (
             <Animated.View layout={layout}>
               <Appear index={index}>
-                <Pressable onPress={() => open(n, meId)} style={({ pressed }) => [styles.row, fresh && styles.fresh, pressed && styles.pressed]} accessibilityRole="button">
+                <Pressable onPress={() => open(n, meId, meUsername)} style={({ pressed }) => [styles.row, fresh && styles.fresh, pressed && styles.pressed]} accessibilityRole="button">
                   <View>
                     {n.actor ? (
                       <Avatar name={n.actor.displayName} url={n.actor.avatarUrl} seed={n.actor.id} size={44} />
                     ) : (
-                      <View style={[styles.sys, n.type === 'achievement' && styles.sysLive]}>{ICON[n.type]}</View>
+                      <View style={[styles.sys, (n.type === 'achievement' || n.type === 'night_recap') && styles.sysLive, n.type === 'night_recap' && { backgroundColor: colors.accent }]}>{ICON[n.type]}</View>
                     )}
                     {n.actor ? <View style={styles.kind}>{ICON[n.type]}</View> : null}
                   </View>
                   <View style={styles.flex}>
                     <Text numberOfLines={3}>
                       {n.actor ? <Text variant="bodyStrong">{n.actor.username} </Text> : null}
-                      {COPY[n.type]}
+                      {n.entityLabel && GROUP_COPY[n.type] ? <>{GROUP_COPY[n.type]}<Text variant="bodyStrong">{n.entityLabel}</Text></> : COPY[n.type]}
                       {n.times > 1 ? <Text tone="muted">{` · ${n.times}×`}</Text> : null}
                     </Text>
                     <Text variant="mono" tone="muted">{formatRelative(n.createdAt) === 'agora' ? 'agora' : `há ${formatRelative(n.createdAt)}`}</Text>

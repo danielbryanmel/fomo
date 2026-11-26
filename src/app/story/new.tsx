@@ -1,13 +1,13 @@
 import { Image } from 'expo-image';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { Camera, Clock3, ImagePlus, MapPin, X } from 'lucide-react-native';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { DualCamera } from '@/components/camera/DualCamera';
 import { Field } from '@/components/form/Field';
 import { Appear } from '@/components/motion';
 import { Button, Chip, Screen, Text, useToast } from '@/components/ui';
-import { pickFromLibrary } from '@/features/compose/photos';
+import { pickFromLibrary, prepareCover, STORY_H, STORY_W } from '@/features/compose/photos';
 import { storyCache } from '@/features/stories';
 import { useAsync } from '@/hooks/useAsync';
 import { repositories } from '@/repositories';
@@ -31,10 +31,41 @@ export default function NewStoryScreen() {
   const [camera, setCamera] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
 
+  // foto da galeria: guardamos a original (já reduzida) e a pessoa arrasta para enquadrar; o recorte 9:16 sai na hora de publicar
+  const [raw, setRaw] = useState<LocalPhoto | null>(null);
+  const [focus, setFocus] = useState({ x: 0.5, y: 0.5 });
+  const [frame, setFrame] = useState({ w: 0, h: 0 });
+  const start = useRef(focus);
+  const pan = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderGrant: () => { start.current = focusRef.current; },
+    onPanResponderMove: (_, g) => {
+      const r = rawRef.current;
+      const f = frameRef.current;
+      if (!r || !f.w) return;
+      const ratio = r.width / r.height;
+      const over = ratio > f.w / f.h ? { x: f.h * ratio - f.w, y: 0 } : { x: 0, y: f.w / ratio - f.h };
+      const clamp = (v: number) => Math.min(1, Math.max(0, v));
+      setFocus({
+        x: over.x ? clamp(start.current.x - g.dx / over.x) : 0.5,
+        y: over.y ? clamp(start.current.y - g.dy / over.y) : 0.5,
+      });
+    },
+  }), []);
+  const focusRef = useRef(focus); focusRef.current = focus;
+  const rawRef = useRef(raw); rawRef.current = raw;
+  const frameRef = useRef(frame); frameRef.current = frame;
+
   async function fromLibrary() {
     try {
-      const [p] = await pickFromLibrary(1, 'story');
-      if (p) setPhoto({ photo: p, dual: false });
+      const [p] = await pickFromLibrary(1);
+      if (p) {
+        setRaw(p);
+        setFocus({ x: 0.5, y: 0.5 });
+        setPhoto({ photo: p, dual: false });
+      }
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Não foi possível abrir suas fotos.', 'error');
     }
@@ -44,7 +75,8 @@ export default function NewStoryScreen() {
     if (!photo) return;
     setProgress(0);
     try {
-      await repositories.stories.create({ photo: photo.photo, eventId: eventId ?? null, caption: caption.trim() || null, visibility: vis, isDual: photo.dual }, setProgress);
+      const final = raw ? await prepareCover(raw, STORY_W, STORY_H, focus) : photo.photo;
+      await repositories.stories.create({ photo: final, eventId: eventId ?? null, caption: caption.trim() || null, visibility: vis, isDual: photo.dual }, setProgress);
       storyCache.changed();
       toast('Story no ar por 24 h', 'success');
       router.canGoBack() ? router.back() : router.replace('/feed');
@@ -62,8 +94,17 @@ export default function NewStoryScreen() {
         {photo ? (
           <Appear>
             <View style={styles.previewWrap}>
-              <Image source={{ uri: photo.photo.uri }} style={styles.preview} contentFit="cover" accessibilityLabel="Prévia do story" />
-              <Pressable onPress={() => setPhoto(null)} style={styles.remove} accessibilityRole="button" accessibilityLabel="Trocar foto" hitSlop={8}>
+              <View style={styles.preview} onLayout={(e) => setFrame({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })} {...(raw ? pan.panHandlers : {})}>
+                <Image
+                  source={{ uri: photo.photo.uri }}
+                  style={StyleSheet.absoluteFill}
+                  contentFit="cover"
+                  contentPosition={{ left: `${Math.round(focus.x * 100)}%`, top: `${Math.round(focus.y * 100)}%` }}
+                  accessibilityLabel="Prévia do story"
+                />
+                {raw ? <View style={styles.hint} pointerEvents="none"><Text variant="caption" style={{ fontWeight: '700' }}>Arraste para enquadrar</Text></View> : null}
+              </View>
+              <Pressable onPress={() => { setPhoto(null); setRaw(null); }} style={styles.remove} accessibilityRole="button" accessibilityLabel="Trocar foto" hitSlop={8}>
                 <X size={16} color={colors.text} />
               </Pressable>
             </View>
@@ -99,7 +140,7 @@ export default function NewStoryScreen() {
 
         <Button label={progress != null ? `Publicando… ${Math.round(progress * 100)}%` : 'Publicar story'} disabled={!photo} loading={progress != null} onPress={publish} fullWidth />
       </ScrollView>
-      <DualCamera format="story" visible={camera} onClose={() => setCamera(false)} onDone={(p, dual) => { setCamera(false); setPhoto({ photo: p, dual }); }} />
+      <DualCamera format="story" visible={camera} onClose={() => setCamera(false)} onDone={(p, dual) => { setCamera(false); setRaw(null); setPhoto({ photo: p, dual }); }} />
     </Screen>
   );
 }
@@ -111,7 +152,8 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.sm, alignSelf: 'stretch' },
   flex: { flex: 1 },
   previewWrap: { alignSelf: 'center', width: '62%', aspectRatio: 9 / 16 },
-  preview: { width: '100%', height: '100%', borderRadius: radius.xl },
+  preview: { width: '100%', height: '100%', borderRadius: radius.xl, overflow: 'hidden' },
+  hint: { position: 'absolute', bottom: spacing.md, alignSelf: 'center', backgroundColor: 'rgba(10,10,11,0.7)', borderRadius: 999, paddingHorizontal: spacing.md, paddingVertical: 6 },
   remove: { position: 'absolute', top: 10, right: 10, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
   event: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center' },
   section: { gap: spacing.sm },

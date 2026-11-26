@@ -1,4 +1,5 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { coverSource } from '@/lib/demoPhotos';
 import { REVIEW_ASPECTS } from '@/config/live';
 import { Users } from 'lucide-react-native';
 import { FomoSaveIcon } from '@/components/icons/FomoIcons';
@@ -93,7 +94,7 @@ export default function EventDetailScreen() {
       <ScrollView contentContainerStyle={{ paddingTop: e.coverUrl ? 0 : insets.top + 64, paddingBottom: insets.bottom + 110 }}>
         {e.coverUrl ? (
           <View style={[styles.hero, { paddingTop: insets.top + 64 }]}>
-            <Image source={{ uri: e.coverUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            <Image source={coverSource(e.coverUrl)} style={StyleSheet.absoluteFill} contentFit="cover" />
             <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(10,10,11,0.45)' }]} />
             <View style={styles.heroText}>
               <View style={styles.heroMeta}>

@@ -2,6 +2,7 @@ import { reportError } from '@/lib/errorReporter';
 /**
  * Mapeamento snake_case (Postgres) → camelCase (domínio). Única camada que conhece nomes de coluna.
  */
+import { demoCover } from '@/lib/demoPhotos';
 import type { CheckInStatus, EventCategory, EventView, FomoEvent, LiveStatus, MapEvent, Post, UserProfile } from '@/types/domain';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -42,7 +43,7 @@ export const toEvent = (r: Row): FomoEvent => ({
   priceMinCents: r.price_min_cents,
   priceMaxCents: r.price_max_cents,
   ticketUrl: r.ticket_url,
-  coverUrl: r.cover_url ?? null,
+  coverUrl: r.cover_url ?? (r.is_demo ? demoCover(r.id) : null),
   organizerId: r.organizer_id,
   createdBy: r.created_by,
   isSponsored: r.is_sponsored && (!r.sponsored_until || Date.parse(r.sponsored_until) > Date.now()),
@@ -59,7 +60,7 @@ export const toEventView = (r: Row, savedByMe: boolean): EventView => ({
 /** events_in_bounds() já devolve JSON em camelCase. */
 export const toMapEvent = (j: Row): MapEvent => ({
   ...(j as unknown as EventView),
-  coverUrl: j.coverUrl ?? null,
+  coverUrl: j.coverUrl ?? (j.isDemo ? demoCover(j.id) : null),
   isDemo: !!j.isDemo,
   live: j.live ? toLive(j.live) : null,
   distanceM: j.distanceM ?? null,

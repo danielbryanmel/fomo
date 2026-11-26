@@ -429,9 +429,17 @@ export const supabaseRepositories: Repositories = {
       const rows = check(await sb().from('notifications')
         .select('id, type, entity_type, entity_id, read_at, created_at, actor:profiles!notifications_actor_id_fkey(*)')
         .order('created_at', { ascending: false }).limit(60)) as Row[];
+      // nome do grupo nas notificações de grupo ("vai no Sextou no Baile"); RLS só devolve grupos de que faço parte
+      const gids = [...new Set(rows.filter((r) => r.entity_type === 'group' && r.entity_id).map((r) => r.entity_id as string))];
+      const names = new Map<string, string>();
+      if (gids.length) {
+        const { data } = await sb().from('groups').select('id, name').in('id', gids);
+        (data ?? []).forEach((g: Row) => names.set(g.id, g.name));
+      }
       return rows.map((r): NotificationView => ({
         id: r.id, type: r.type, actor: r.actor ? toProfile(r.actor) : null, entityType: r.entity_type,
         entityId: r.entity_id, readAt: r.read_at, createdAt: r.created_at,
+        entityLabel: r.entity_type === 'group' ? (names.get(r.entity_id) ?? null) : null,
       }));
     },
     async unreadCount() {
