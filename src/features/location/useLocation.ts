@@ -26,23 +26,36 @@ async function remember(f: Fix) {
  * Web: Permissions API (Chrome, Android, Safari 16+). Onde ela não existe, usamos a marca
  * de que a pessoa já aceitou antes — aí lemos direto, sem mostrar a nossa tela de pedido de novo.
  */
-async function permissionState(): Promise<'granted' | 'denied' | 'prompt'> {
+/**
+ * iPhone/iPad: o Safari (e o app instalado na tela inicial) NÃO guarda a permissão de localização
+ * entre aberturas, e a Permissions API responde "prompt" mesmo depois de aceita. Qualquer leitura
+ * automática ao abrir vira um pedido novo — era o "pede minha localização toda vez".
+ */
+export const isIOSWeb = () =>
+  Platform.OS === 'web' && typeof navigator !== 'undefined' &&
+  (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
+/**
+ * 'granted' = podemos ler SEM o navegador perguntar. 'remembered' = a pessoa já aceitou antes,
+ * mas ler agora faria o navegador perguntar de novo (iOS) — então só lemos quando ela tocar.
+ */
+async function permissionState(): Promise<'granted' | 'remembered' | 'denied' | 'prompt'> {
   if (Platform.OS === 'web') {
+    let api: PermissionState | null = null;
     try {
       const nav = navigator as Navigator & { permissions?: Permissions };
-      if (nav.permissions?.query) {
-        const r = await nav.permissions.query({ name: 'geolocation' as PermissionName });
-        if (r.state === 'granted' || r.state === 'denied') return r.state;
-      }
+      if (nav.permissions?.query) api = (await nav.permissions.query({ name: 'geolocation' as PermissionName })).state;
     } catch {
       /* Safari antigo */
     }
+    if (api === 'denied') return 'denied';
+    if (api === 'granted' && !isIOSWeb()) return 'granted';
     try {
-      if ((await AsyncStorage.getItem(GRANTED_KEY)) === '1') return 'granted';
+      if ((await AsyncStorage.getItem(GRANTED_KEY)) === '1') return 'remembered';
     } catch {
       /* ignora */
     }
-    return 'prompt';
+    return api === 'granted' ? 'remembered' : 'prompt';
   }
   const perm = await Location.getForegroundPermissionsAsync();
   if (perm.granted) return 'granted';
@@ -68,10 +81,10 @@ export function useLocation() {
       try {
         const [saved, last] = await Promise.all([AsyncStorage.getItem(HOOD_KEY), AsyncStorage.getItem(LAST_KEY)]);
         if (saved && alive) setNeighborhoodState(JSON.parse(saved) as Neighborhood);
-        // mostra na hora a última posição conhecida (até 6 h), enquanto busca a atual
+        // mostra na hora a última posição conhecida (até 24 h)
         if (last && alive) {
           const l = JSON.parse(last) as { point: GeoPoint; accuracyM: number | null; at: number };
-          if (Date.now() - l.at < 6 * 3600_000) {
+          if (Date.now() - l.at < 24 * 3600_000) {
             setPosition(l.point);
             setAccuracyM(l.accuracyM);
           }
@@ -87,6 +100,10 @@ export function useLocation() {
           void readFix().then((f) => {
             if (alive && f) apply(f);
           });
+        } else if (st === 'remembered') {
+          // já aceitou antes: usa a última posição guardada e NÃO dispara o pedido do navegador.
+          // Posição nova só quando a pessoa toca no botão de localização.
+          setStatus('granted');
         } else if (st === 'denied') {
           setStatus('denied');
         } else {
@@ -114,7 +131,7 @@ export function useLocation() {
         const f = await webBestFix();
         if (!f) {
           const st = await permissionState();
-          setStatus(st === 'denied' ? 'denied' : 'prompt');
+          setStatus(st === 'denied' ? 'denied' : st === 'remembered' ? 'granted' : 'prompt');
           return null;
         }
         setStatus('granted');
@@ -214,9 +231,14 @@ export async function readOnce(): Promise<GeoPoint | null> {
 /** Leitura precisa e fresca para validar relato no local (não usa cache). */
 export async function readPreciseOnce(): Promise<GeoPoint | null> {
   try {
+    // web: a própria leitura pede a permissão (pedir antes gerava DOIS pedidos no iPhone)
+    if (Platform.OS === 'web') {
+      const f = await webBestFix(10000);
+      if (f) void remember(f);
+      return f?.point ?? null;
+    }
     const perm = await Location.requestForegroundPermissionsAsync();
     if (!perm.granted) return null;
-    if (Platform.OS === 'web') return (await webBestFix(10000))?.point ?? null;
     const cur = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
     return { latitude: cur.coords.latitude, longitude: cur.coords.longitude };
   } catch {

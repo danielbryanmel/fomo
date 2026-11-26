@@ -1,8 +1,8 @@
 import type { LocalPhoto } from '@/types/domain';
 
 /** Saída da câmera dupla: 3:4, leve para upload. */
-export const DUAL_W = 1080;
-export const DUAL_H = 1440;
+export const DEFAULT_W = 1080;
+export const DEFAULT_H = 1440;
 
 /** Desenha `src` cobrindo o retângulo (como object-fit: cover), opcionalmente espelhado. */
 function drawCover(ctx: CanvasRenderingContext2D, src: CanvasImageSource & { width: number; height: number }, x: number, y: number, w: number, h: number, mirror = false) {
@@ -42,7 +42,9 @@ export function grabFrame(video: HTMLVideoElement): HTMLCanvasElement {
 }
 
 /** Foto principal (traseira) + selfie no canto, com borda — no estilo "câmera dupla". */
-export async function composeDual(back: HTMLCanvasElement, front: HTMLCanvasElement | null): Promise<LocalPhoto> {
+export async function composeDual(back: HTMLCanvasElement, front: HTMLCanvasElement | null, size?: { w: number; h: number }): Promise<LocalPhoto> {
+  const DUAL_W = size?.w ?? DEFAULT_W;
+  const DUAL_H = size?.h ?? DEFAULT_H;
   const c = document.createElement('canvas');
   c.width = DUAL_W;
   c.height = DUAL_H;
@@ -52,7 +54,7 @@ export async function composeDual(back: HTMLCanvasElement, front: HTMLCanvasElem
   drawCover(ctx, back, 0, 0, DUAL_W, DUAL_H);
   if (front) {
     const w = Math.round(DUAL_W * 0.32);
-    const h = Math.round(w * 4 / 3);
+    const h = Math.round(w * (DUAL_H / DUAL_W > 1.5 ? 16 / 9 : 4 / 3));
     const m = 36;
     ctx.save();
     roundRect(ctx, m - 6, m - 6, w + 12, h + 12, 34);

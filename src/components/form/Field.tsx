@@ -16,7 +16,7 @@ export function Field({ label, hint, error, max, value, multiline, style, ...res
   return (
     <View style={styles.root}>
       <View style={styles.top}>
-        <Text variant="label" tone="secondary" style={{ fontSize: 14, fontWeight: '700' }}>{label}</Text>
+        <Text variant="label" tone="secondary" style={{ fontSize: 14, fontWeight: '700' }}>{label.charAt(0).toUpperCase() + label.slice(1)}</Text>
         {max ? <Text variant="caption" tone={(value?.length ?? 0) > max * 0.9 ? 'accent' : 'muted'}>{value?.length ?? 0}/{max}</Text> : null}
       </View>
       <Animated.View style={[styles.box, multiline && styles.multi, border]}>

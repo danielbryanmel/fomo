@@ -16,7 +16,7 @@ type Phase = 'starting' | 'back' | 'front' | 'working' | 'review' | 'error';
  * uma selfie com a frontal — as duas viram UMA imagem (selfie no canto).
  * Nenhum vídeo é gravado; os quadros ficam só no aparelho até você publicar.
  */
-export function DualCamera({ visible, onClose, onDone }: DualCameraProps) {
+export function DualCamera({ visible, onClose, onDone, format = 'post' }: DualCameraProps) {
   const insets = useSafeAreaInsets();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -83,7 +83,7 @@ export function DualCamera({ visible, onClose, onDone }: DualCameraProps) {
     stop();
     setPhase('working');
     try {
-      const photo = await composeDual(back, front);
+      const photo = await composeDual(back, front, format === 'story' ? { w: 1080, h: 1920 } : undefined);
       setResult({ photo, dual: !!front });
       setPhase('review');
     } catch {
@@ -116,7 +116,7 @@ export function DualCamera({ visible, onClose, onDone }: DualCameraProps) {
           <View style={styles.round} />
         </View>
 
-        <View style={styles.stage}>
+        <View style={[styles.stage, format === 'story' && styles.stageStory]}>
           {phase !== 'review' ? (
             <video
               ref={videoRef}
@@ -166,6 +166,8 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   round: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
   stage: { flex: 1, borderRadius: 28, overflow: 'hidden', backgroundColor: '#000' },
+  // story: o quadro mostra exatamente o que sai na foto (9:16)
+  stageStory: { flex: 0, height: undefined, width: '100%', maxHeight: '100%', aspectRatio: 9 / 16, alignSelf: 'center' },
   preview: { width: '100%', height: '100%' },
   center: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   count: { fontSize: 96, fontWeight: '800', color: colors.text },

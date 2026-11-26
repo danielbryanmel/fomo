@@ -112,8 +112,12 @@ export default function CheckinScreen() {
   }
 
   async function fromLibrary() {
-    const [p] = await pickFromLibrary(1);
-    if (p) setPhoto({ photo: p, dual: false });
+    try {
+      const [p] = await pickFromLibrary(1);
+      if (p) setPhoto({ photo: p, dual: false });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Não foi possível abrir suas fotos.', 'error');
+    }
   }
 
   return (

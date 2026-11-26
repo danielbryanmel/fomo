@@ -181,7 +181,7 @@ export default function StoryViewer() {
   return (
     <View style={styles.root}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Image source={story.photo} style={StyleSheet.absoluteFill} contentFit="contain" transition={150} accessibilityLabel={story.caption ?? `Story de ${group.author.displayName}`} />
+      <Image source={story.photo} style={StyleSheet.absoluteFill} contentFit={story.height / story.width > 1.6 ? 'cover' : 'contain'} transition={150} accessibilityLabel={story.caption ?? `Story de ${group.author.displayName}`} />
 
       {/* toque: esquerda volta, direita avança; segurar pausa */}
       <View style={[StyleSheet.absoluteFill, styles.taps]}>

@@ -1,3 +1,4 @@
+import { reportError } from '@/lib/errorReporter';
 import { StarInput } from '@/components/form/StarInput';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
@@ -77,8 +78,9 @@ export default function ComposeScreen() {
     try {
       const more = await pickFromLibrary(MAX_PHOTOS - photos.length);
       setPhotos((p) => [...p, ...more].slice(0, MAX_PHOTOS));
-    } catch {
-      toast('Não foi possível abrir suas fotos.', 'error');
+    } catch (e) {
+      toast(e instanceof Error && e.message ? e.message : 'Não foi possível abrir suas fotos.', 'error');
+      reportError(e, 'compose:gallery');
     } finally {
       setBusyPick(false);
     }

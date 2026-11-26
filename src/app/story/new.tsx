@@ -32,8 +32,12 @@ export default function NewStoryScreen() {
   const [progress, setProgress] = useState<number | null>(null);
 
   async function fromLibrary() {
-    const [p] = await pickFromLibrary(1);
-    if (p) setPhoto({ photo: p, dual: false });
+    try {
+      const [p] = await pickFromLibrary(1, 'story');
+      if (p) setPhoto({ photo: p, dual: false });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Não foi possível abrir suas fotos.', 'error');
+    }
   }
 
   async function publish() {
@@ -95,7 +99,7 @@ export default function NewStoryScreen() {
 
         <Button label={progress != null ? `Publicando… ${Math.round(progress * 100)}%` : 'Publicar story'} disabled={!photo} loading={progress != null} onPress={publish} fullWidth />
       </ScrollView>
-      <DualCamera visible={camera} onClose={() => setCamera(false)} onDone={(p, dual) => { setCamera(false); setPhoto({ photo: p, dual }); }} />
+      <DualCamera format="story" visible={camera} onClose={() => setCamera(false)} onDone={(p, dual) => { setCamera(false); setPhoto({ photo: p, dual }); }} />
     </Screen>
   );
 }
@@ -106,7 +110,7 @@ const styles = StyleSheet.create({
   center: { textAlign: 'center' },
   row: { flexDirection: 'row', gap: spacing.sm, alignSelf: 'stretch' },
   flex: { flex: 1 },
-  previewWrap: { alignSelf: 'center', width: '72%', aspectRatio: 3 / 4 },
+  previewWrap: { alignSelf: 'center', width: '62%', aspectRatio: 9 / 16 },
   preview: { width: '100%', height: '100%', borderRadius: radius.xl },
   remove: { position: 'absolute', top: 10, right: 10, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(0,0,0,0.6)', alignItems: 'center', justifyContent: 'center' },
   event: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'center' },
