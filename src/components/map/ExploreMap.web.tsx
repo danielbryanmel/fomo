@@ -46,11 +46,18 @@ function injectCss() {
       border-radius: 8px; background: rgba(21,20,23,.92); color: #F4F1F6; font: 700 13px/1.25 Archivo-Bold, Archivo, system-ui, sans-serif;
       animation: fomoLabelIn .3s ease both; }
     .fomo-pin-label.sel { border-color: rgba(255,255,255,.28); }
-    .fomo-venue { display: flex; align-items: center; gap: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-    .fomo-venue i { width: 10px; height: 10px; border-radius: 3px; background: #3A3842; border: 1.5px solid #6E6877; flex: none; }
-    .fomo-venue span { display: none; font: 600 11px/1.2 Archivo-SemiBold, Archivo, system-ui, sans-serif; color: #A9A3B2; white-space: nowrap; text-shadow: 0 1px 2px #0A0A0B; }
-    .fomo-map.z15 .fomo-venue span { display: inline; }
-    .fomo-venue:hover i { border-color: #F4F1F6; }
+    /* Lugares sem rolê: camada de fundo. Somem de longe, viram um pontinho de perto, nome só bem de perto. */
+    .fomo-venue { display: none; align-items: center; gap: 6px; cursor: pointer; padding: 7px; margin: -7px; -webkit-tap-highlight-color: transparent; }
+    .fomo-map.z14 .fomo-venue { display: flex; }
+    .fomo-venue i { width: 6px; height: 6px; border-radius: 999px; background: #6E6877; flex: none; transition: transform .2s; }
+    .fomo-venue span { display: none; font: 600 11px/1.2 Archivo-SemiBold, Archivo, system-ui, sans-serif; color: #6E6877; white-space: nowrap; text-shadow: 0 1px 2px #0A0A0B, 0 0 6px #0A0A0B; }
+    .fomo-map.z16 .fomo-venue span { display: inline; }
+    .fomo-venue:hover i { transform: scale(1.5); background: #A9A3B2; }
+    /* rolê futuro: anel pequeno; de perto cresce e mostra o nome */
+    .fomo-pin-dot.later { opacity: .8; }
+    .fomo-map.z15 .fomo-pin-dot.later { transform: scale(1.3); opacity: 1; }
+    .fomo-pin-label.later { display: none; }
+    .fomo-map.z15 .fomo-pin-label.later { display: block; }
     .fomo-user { position: relative; width: 18px; height: 18px; }
     .fomo-user::before { content: ''; position: absolute; inset: -10px; border-radius: 50%; background: rgba(244,241,246,.16); animation: fomoPulse 2.2s ease-out infinite; }
     .fomo-user::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #F4F1F6; border: 5px solid #0A0A0B; box-sizing: border-box; box-shadow: 0 2px 10px rgba(0,0,0,.5); }
@@ -69,16 +76,19 @@ function pinHtml(e: MapEvent, selected: boolean) {
   const level = e.live?.crowd ?? null;
   const now = e.happeningNow;
   const color = level ? heatScale[level].dot : now ? colors.text : colors.textMuted;
-  const size = selected ? 20 : 16;
+  // hierarquia: ao vivo = ponto cheio 16px; rolê futuro = anel pequeno e discreto (cresce de perto)
+  const size = selected ? 20 : now ? 16 : 10;
   const box = Math.max(size, 24);
-  const dot = `width:${size}px;height:${size}px;background:${now ? color : colors.background};border:${now ? (selected ? 3 : 0) : 2.5}px solid ${
-    now ? colors.text : color
+  const dot = `width:${size}px;height:${size}px;background:${now ? color : colors.background};border:${now ? (selected ? 3 : 0) : selected ? 3 : 2}px solid ${
+    now ? colors.text : selected ? colors.text : color
   };`;
   const status = level ? ` <b style="color:${level === 1 ? colors.textSecondary : heatScale[level].dot};font-weight:800">${CROWD_LABEL[level]}</b>` : '';
-  const label = selected || level || (!e.isDemo && !now) ? `<div class="fomo-pin-label${selected ? ' sel' : ''}">${esc(e.venueName ?? e.title)}${status}</div>` : '';
+  // etiqueta: ao vivo sempre; futuro só de perto (zoom ≥ 15) ou selecionado
+  const later = !now && !selected;
+  const label = selected || level || !e.isDemo ? `<div class="fomo-pin-label${selected ? ' sel' : ''}${later ? ' later' : ''}">${esc(e.venueName ?? e.title)}${status}</div>` : '';
   return `<div class="fomo-pin-box" style="width:${box}px;height:${box}px">${
     level === 4 ? `<div class="fomo-pin-halo" style="width:${size + 14}px;height:${size + 14}px;background:${color}"></div>` : ''
-  }<div class="fomo-pin-dot" style="${dot}"></div></div>${label}`;
+  }<div class="fomo-pin-dot${later ? ' later' : ''}" style="${dot}"></div></div>${label}`;
 }
 
 function regionOf(map: MLMap): Region {
@@ -295,8 +305,13 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
     });
     map.on('moveend', () => cb.current.onRegionChangeComplete(regionOf(map)));
     map.on('zoomend', () => requestAnimationFrame(declutter));
-    // nomes dos lugares só aparecem de perto (zoom ≥ 15)
-    const zoomClass = () => el.classList.toggle('z15', map.getZoom() >= 15);
+    // camadas por zoom: lugares (≥14), rótulo de rolê futuro (≥15), nome de lugar (≥16)
+    const zoomClass = () => {
+      const z = map.getZoom();
+      el.classList.toggle('z14', z >= 14);
+      el.classList.toggle('z15', z >= 15);
+      el.classList.toggle('z16', z >= 16);
+    };
     map.on('zoom', zoomClass);
     zoomClass();
     map.on('idle', () => requestAnimationFrame(declutter));
@@ -337,7 +352,7 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
       el.setAttribute('aria-label', `${v.name}, lugar`);
       el.innerHTML = `<i></i><span>${esc(v.name)}</span>`;
       el.addEventListener('click', (ev) => { ev.stopPropagation(); cb.current.onVenuePress?.(v.id); });
-      const m = new maplibregl.Marker({ element: el, anchor: 'left', offset: [-5, 0] }).setLngLat([v.longitude, v.latitude]).addTo(map);
+      const m = new maplibregl.Marker({ element: el, anchor: 'left', offset: [-10, 0] }).setLngLat([v.longitude, v.latitude]).addTo(map);
       m.getElement().style.zIndex = '0';
       venueMarkers.current.set(v.id, m);
     }
