@@ -261,6 +261,24 @@ export type LiveStatus = {
 export type GeoPoint = { latitude: number; longitude: number };
 export type GeoBounds = { north: number; south: number; east: number; west: number };
 
+/** Lugar real da cidade (bar, balada, casa de show). Cadastrado pela equipe, só leitura no app. */
+export type VenueKind = 'bar' | 'balada' | 'samba' | 'pub' | 'casa_de_show' | 'ponto';
+export type Venue = {
+  id: UUID;
+  name: string;
+  kind: VenueKind;
+  category: EventCategory | null;
+  neighborhood: string | null;
+  address: string;
+  latitude: number;
+  longitude: number;
+  /** 'rua' = coordenada aproximada (só a rua). */
+  geoPrecision: 'numero' | 'rua';
+  sourceUrl: string | null;
+  checkedAt: string;
+  distanceM?: number | null;
+};
+
 export type DateFilter = 'now' | 'today' | 'weekend' | 'any';
 export type PriceFilter = 'any' | 'free' | 'upTo50' | 'over50';
 

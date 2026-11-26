@@ -3,6 +3,7 @@
  * visibilidade previstas nas políticas RLS (docs/DATA_MODEL.md), para que a UI já seja
  * construída contra o comportamento real. Não é segurança — é simulação.
  */
+import { VENUES } from './venuesData';
 import * as db from '@/mocks/data';
 import type {
   ContentVisibility,
@@ -422,6 +423,25 @@ export const mockRepositories: Repositories = {
     ...mockSuggest,
   },
 
+  venues: {
+    async inBounds(b, origin) {
+      await delay(80);
+      return VENUES.filter((v) => v.latitude >= b.south && v.latitude <= b.north && v.longitude >= b.west && v.longitude <= b.east)
+        .map((v) => ({ ...v, category: db.categories.find((c) => c.slug === v.categorySlug) ?? null, distanceM: origin ? Math.round(distanceM(origin, v)) : null }))
+        .sort((a, z) => (a.distanceM ?? 0) - (z.distanceM ?? 0));
+    },
+    async getById(id) {
+      await delay(60);
+      const v = VENUES.find((x) => x.id === id);
+      return v ? { ...v, category: db.categories.find((c) => c.slug === v.categorySlug) ?? null } : null;
+    },
+    async upcomingEvents(v) {
+      await delay(80);
+      return db.events
+        .filter((e) => (e.status === 'approved') && distanceM(v, e) <= 120)
+        .map((e) => ({ ...e, category: categoryById(e.categoryId)!, savedByMe: false }));
+    },
+  },
   messages: mockMessages,
   groups: { ...mockGroups, ...mockGroupsSafety },
   checkins: mockCheckins,

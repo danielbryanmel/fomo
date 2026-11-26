@@ -1,5 +1,6 @@
 import type {
   ReviewAspect,
+  Venue,
   CreatePostInput,
   CrowdLevel,
   DateFilter,
@@ -210,8 +211,16 @@ export interface SocialRepository {
   respondFollow(followerId: string, accept: boolean): Promise<void>;
 }
 
+export interface VenuesRepository {
+  inBounds(bounds: GeoBounds, origin: GeoPoint | null): Promise<Venue[]>;
+  getById(id: string): Promise<Venue | null>;
+  /** Rolês aprovados e não encerrados ligados a este lugar (ou a até 120 m dele). */
+  upcomingEvents(venue: Venue): Promise<EventView[]>;
+}
+
 export type Repositories = {
   events: EventsRepository;
+  venues: VenuesRepository;
   live: LiveRepository;
   posts: PostsRepository;
   profiles: ProfilesRepository;

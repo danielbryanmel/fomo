@@ -2,7 +2,7 @@ import { useAppSize } from '@/components/web/WebFrame';
 import { Appear } from '@/components/motion';
 import BottomSheet, { BottomSheetFlatList, type BottomSheetFlatListMethods } from '@gorhom/bottom-sheet';
 import { router } from 'expo-router';
-import { ChevronDown, LocateFixed, Search, SearchX, SlidersHorizontal, X } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, LocateFixed, MapPin, Search, SearchX, SlidersHorizontal, X } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,13 +15,42 @@ import { PlacePicker } from '@/features/explore/PlacePicker';
 import { useExploreMap } from '@/features/explore/useExploreMap';
 import { useLocation } from '@/features/location/useLocation';
 import { useAsync } from '@/hooks/useAsync';
-import { DEFAULT_REGION, regionAround } from '@/lib/geo';
+import { VENUE_KIND } from '@/features/venues/labels';
+import { DEFAULT_REGION, formatDistance, regionAround, regionToBounds } from '@/lib/geo';
 import { repositories } from '@/repositories';
 import { colors, hitTarget, radius, spacing, TAB_BAR_SPACE, typography } from '@/theme';
-import type { MapEvent } from '@/types/domain';
+import type { MapEvent, Venue } from '@/types/domain';
 
 const SNAPS = ['22%', '50%', '86%'];
 const SNAP_RATIO = [0.22, 0.5, 0.86];
+
+function VenuesNearby({ venues }: { venues: Venue[] }) {
+  return (
+    <View style={{ marginTop: spacing.xl, gap: spacing.xs }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+        <Text variant="section">Lugares por aqui</Text>
+        <Text variant="caption" tone="muted">{venues.length} {venues.length === 1 ? 'lugar' : 'lugares'}</Text>
+      </View>
+      {venues.slice(0, 20).map((v) => (
+        <Pressable
+          key={v.id}
+          onPress={() => router.push({ pathname: '/venue/[id]', params: { id: v.id } })}
+          accessibilityRole="link"
+          style={({ pressed }) => [styles.venueRow, pressed && { opacity: 0.8 }]}
+        >
+          <View style={styles.venueIcon}><MapPin size={18} color={colors.textSecondary} /></View>
+          <View style={{ flex: 1 }}>
+            <Text variant="bodyStrong" numberOfLines={1}>{v.name}</Text>
+            <Text variant="caption" tone="secondary" numberOfLines={1}>
+              {[VENUE_KIND[v.kind], v.neighborhood, formatDistance(v.distanceM ?? null)].filter(Boolean).join(' · ')}
+            </Text>
+          </View>
+          <ChevronRight size={18} color={colors.textMuted} />
+        </Pressable>
+      ))}
+    </View>
+  );
+}
 
 export default function ExploreScreen() {
   const insets = useSafeAreaInsets();
@@ -38,6 +67,17 @@ export default function ExploreScreen() {
     [],
   );
   const explore = useExploreMap(initialRegion, location.origin);
+  // lugares reais da área visível (bares, baladas, casas de show) — só leitura
+  const [venues, setVenues] = useState<Venue[]>([]);
+  useEffect(() => {
+    let alive = true;
+    const t = setTimeout(() => {
+      repositories.venues.inBounds(regionToBounds(explore.region), location.origin)
+        .then((v) => { if (alive) setVenues(v); })
+        .catch(() => {});
+    }, 350);
+    return () => { alive = false; clearTimeout(t); };
+  }, [explore.region, location.origin]);
   const categories = useAsync(() => repositories.events.listCategories(), []);
   const neighborhoods = useAsync(() => repositories.events.listNeighborhoods(), []);
 
@@ -120,6 +160,8 @@ export default function ExploreScreen() {
         selectedId={selectedId}
         onSelect={selectEvent}
         onRegionChangeComplete={explore.setRegion}
+        venues={venues}
+        onVenuePress={(id) => router.push({ pathname: '/venue/[id]', params: { id } })}
         userLocation={location.neighborhood ? null : location.position}
         userAccuracyM={location.neighborhood ? null : location.accuracyM}
         topInset={topOverlayH}
@@ -223,6 +265,7 @@ export default function ExploreScreen() {
             </Appear>
           )}
           ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
+          ListFooterComponent={venues.length ? <VenuesNearby venues={venues} /> : undefined}
           contentContainerStyle={[styles.list, { paddingBottom: spacing.xxl }]}
           ListEmptyComponent={
             explore.loading ? undefined : explore.error ? (
@@ -265,6 +308,8 @@ const glass = {
 } as const;
 
 const styles = StyleSheet.create({
+  venueRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
+  venueIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   accuracy: { position: 'absolute', right: 72, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(10,10,11,0.82)', borderWidth: 1, borderColor: colors.border },
   root: { flex: 1, backgroundColor: colors.background },
   top: { position: 'absolute', left: 0, right: 0, top: 0, gap: spacing.md },

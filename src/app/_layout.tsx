@@ -93,6 +93,7 @@ export default function RootLayout() {
             <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
             <Stack.Screen name="onboarding" options={{ animation: 'fade', gestureEnabled: false }} />
             <Stack.Screen name="event/[id]" />
+            <Stack.Screen name="venue/[id]" />
             <Stack.Screen name="post/[id]" options={{ headerShown: true, title: 'Publicação' }} />
             <Stack.Screen name="u/[username]" options={{ headerShown: true, title: '' }} />
             <Stack.Screen name="compose" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />

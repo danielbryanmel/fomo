@@ -472,6 +472,14 @@ ok('cliente NÃO roda demo_refresh/demo_purge', !!(await fails(A, 'select demo_r
 ok('cliente NÃO se marca como demo', !!(await fails(A, 'update profiles set is_demo = true where id = auth.uid()')));
 await db.exec(readFileSync(join(root, 'demo_social.sql'), 'utf8'));
 await db.exec(readFileSync(join(root, 'demo_social.sql'), 'utf8')); // idempotente
+// lugares reais + shows reais (seeds de produção) — idempotentes e só leitura no app
+await db.exec(readFileSync(join(root, 'venues_sp.sql'), 'utf8'));
+await db.exec(readFileSync(join(root, 'venues_sp.sql'), 'utf8'));
+await db.exec(readFileSync(join(root, 'events_sp.sql'), 'utf8'));
+await db.exec(readFileSync(join(root, 'events_sp.sql'), 'utf8'));
+ok('lugares: seed carregado e visível sem login', (await one(null, 'select count(*)::int n from venues')).n >= 40);
+ok('lugares: cliente NÃO cria nem edita lugar', !!(await fails(A, "insert into venues (name, kind, address, latitude, longitude) values ('x bar', 'bar', 'rua x', 0, 0)")) && !!(await fails(A, "update venues set name = 'hack'")));
+ok('shows reais: aprovados e ligados ao lugar', (await one(null, "select count(*)::int n from events e join venues v on v.id = e.venue_id where e.status = 'approved'")).n === 4);
 const BAILE = 'de0e0000-0000-4000-8000-000000000001';
 // "O que pesou?" (aspects) na avaliação: lista fechada validada no banco
 ok('avaliação: aspectos inválidos são recusados', !!(await fails(B, "insert into reviews (author_id, event_id, rating, aspects) values (auth.uid(), $1, 4, array['hackeado'])", [BAILE])));

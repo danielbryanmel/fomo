@@ -3,6 +3,7 @@
  * Toda regra de visibilidade/autorização está no banco (RLS + RPCs, ver supabase/migrations).
  * Este arquivo só consulta, monta view models e traduz erros.
  */
+import { venuesRepo } from './venues';
 import * as Crypto from 'expo-crypto';
 import { neighborhoods } from '@/config/neighborhoods';
 import { requireSupabase } from '@/lib/supabase/client';
@@ -401,6 +402,7 @@ export const supabaseRepositories: Repositories = {
     ...profilesSuggest,
   },
 
+  venues: venuesRepo,
   messages: messagesRepo,
   groups: { ...groupsRepo, ...groupsSafety },
   checkins: checkinsRepo,

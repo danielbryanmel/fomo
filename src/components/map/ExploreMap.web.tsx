@@ -17,7 +17,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import type { Region } from '@/lib/geo';
 import { CROWD_LABEL } from '@/config/live';
 import { colors, heatScale, radius, spacing } from '@/theme';
-import type { GeoPoint, MapEvent } from '@/types/domain';
+import type { GeoPoint, MapEvent, Venue } from '@/types/domain';
 import type { ExploreMapProps } from './ExploreMap.types';
 import { FOMO_MAP_STYLE, MAP_ATTRIBUTION } from './fomoMapStyle';
 
@@ -46,6 +46,11 @@ function injectCss() {
       border-radius: 8px; background: rgba(21,20,23,.92); color: #F4F1F6; font: 700 13px/1.25 Archivo-Bold, Archivo, system-ui, sans-serif;
       animation: fomoLabelIn .3s ease both; }
     .fomo-pin-label.sel { border-color: rgba(255,255,255,.28); }
+    .fomo-venue { display: flex; align-items: center; gap: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .fomo-venue i { width: 10px; height: 10px; border-radius: 3px; background: #3A3842; border: 1.5px solid #6E6877; flex: none; }
+    .fomo-venue span { display: none; font: 600 11px/1.2 Archivo-SemiBold, Archivo, system-ui, sans-serif; color: #A9A3B2; white-space: nowrap; text-shadow: 0 1px 2px #0A0A0B; }
+    .fomo-map.z15 .fomo-venue span { display: inline; }
+    .fomo-venue:hover i { border-color: #F4F1F6; }
     .fomo-user { position: relative; width: 18px; height: 18px; }
     .fomo-user::before { content: ''; position: absolute; inset: -10px; border-radius: 50%; background: rgba(244,241,246,.16); animation: fomoPulse 2.2s ease-out infinite; }
     .fomo-user::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #F4F1F6; border: 5px solid #0A0A0B; box-sizing: border-box; box-shadow: 0 2px 10px rgba(0,0,0,.5); }
@@ -105,7 +110,7 @@ function circle(p: GeoPoint, meters: number): GeoJSON.FeatureCollection {
 
 const EMPTY: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] };
 
-export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, onRegionChangeComplete, userLocation, userAccuracyM, bottomInset, topInset }: ExploreMapProps) {
+export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, onRegionChangeComplete, userLocation, userAccuracyM, bottomInset, topInset, venues = [], onVenuePress }: ExploreMapProps) {
   const host = useRef<HTMLElement | null>(null);
   const mapRef = useRef<MLMap | null>(null);
   const ready = useRef(false);
@@ -113,8 +118,9 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
   const userMarker = useRef<Marker | null>(null);
   const latest = useRef({ events, selectedId, userLocation, userAccuracyM });
   latest.current = { events, selectedId, userLocation, userAccuracyM };
-  const cb = useRef({ onSelect, onRegionChangeComplete });
-  cb.current = { onSelect, onRegionChangeComplete };
+  const cb = useRef({ onSelect, onRegionChangeComplete, onVenuePress });
+  cb.current = { onSelect, onRegionChangeComplete, onVenuePress };
+  const venueMarkers = useRef(new Map<string, Marker>());
   const insets = useRef({ top: topInset, bottom: bottomInset });
   insets.current = { top: topInset, bottom: bottomInset };
 
@@ -289,6 +295,10 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
     });
     map.on('moveend', () => cb.current.onRegionChangeComplete(regionOf(map)));
     map.on('zoomend', () => requestAnimationFrame(declutter));
+    // nomes dos lugares só aparecem de perto (zoom ≥ 15)
+    const zoomClass = () => el.classList.toggle('z15', map.getZoom() >= 15);
+    map.on('zoom', zoomClass);
+    zoomClass();
     map.on('idle', () => requestAnimationFrame(declutter));
     setTimeout(declutter, 900); // depois da animação de entrada das etiquetas
     map.on('click', () => cb.current.onSelect(null));
@@ -310,6 +320,31 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(syncPins, [events, selectedId]);
+
+  // Lugares reais: ponto pequeno e discreto (sem lotação). Some onde já há um rolê no mesmo ponto.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const near = (v: Venue) => events.some((e) => Math.abs(e.latitude - v.latitude) < 0.0008 && Math.abs(e.longitude - v.longitude) < 0.0008);
+    const keep = new Set<string>();
+    for (const v of venues) {
+      if (near(v)) continue;
+      keep.add(v.id);
+      if (venueMarkers.current.has(v.id)) continue;
+      const el = document.createElement('div');
+      el.className = 'fomo-venue';
+      el.setAttribute('role', 'button');
+      el.setAttribute('aria-label', `${v.name}, lugar`);
+      el.innerHTML = `<i></i><span>${esc(v.name)}</span>`;
+      el.addEventListener('click', (ev) => { ev.stopPropagation(); cb.current.onVenuePress?.(v.id); });
+      const m = new maplibregl.Marker({ element: el, anchor: 'left', offset: [-5, 0] }).setLngLat([v.longitude, v.latitude]).addTo(map);
+      m.getElement().style.zIndex = '0';
+      venueMarkers.current.set(v.id, m);
+    }
+    for (const [id, m] of venueMarkers.current) {
+      if (!keep.has(id)) { m.remove(); venueMarkers.current.delete(id); }
+    }
+  }, [venues, events]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(syncUser, [userLocation?.latitude, userLocation?.longitude, userAccuracyM]);
 

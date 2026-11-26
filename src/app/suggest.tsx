@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Check, Crosshair, MapPin, X } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FomoMark } from '@/components/brand/FomoMark';
@@ -58,6 +58,21 @@ export default function SuggestScreen() {
   const [priceMax, setPriceMax] = useState('');
   const [ticket, setTicket] = useState('');
   const [description, setDescription] = useState('');
+
+  // vindo da página de um lugar real: preenche nome, endereço, ponto e categoria
+  const { venueId } = useLocalSearchParams<{ venueId?: string }>();
+  useEffect(() => {
+    if (!venueId) return;
+    let alive = true;
+    void repositories.venues.getById(venueId).then((v) => {
+      if (!alive || !v) return;
+      setVenue(v.name);
+      setAddress(v.address);
+      setLoc({ point: { latitude: v.latitude, longitude: v.longitude }, source: 'address', label: v.address });
+      if (v.category) setCategoryId(v.category.id);
+    }).catch(() => {});
+    return () => { alive = false; };
+  }, [venueId]);
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
 
