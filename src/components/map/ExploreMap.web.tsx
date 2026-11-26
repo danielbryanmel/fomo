@@ -183,7 +183,7 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
       el.style.zIndex = z;
       markers.current.set(e.id, { m, key });
     }
-    requestAnimationFrame(declutter);
+    setTimeout(declutter, 450); // espera a animação de entrada (as caixas mudam de lugar)
     for (const [id, v] of markers.current) {
       if (!seen.has(id)) {
         v.m.remove();
@@ -289,6 +289,8 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
     });
     map.on('moveend', () => cb.current.onRegionChangeComplete(regionOf(map)));
     map.on('zoomend', () => requestAnimationFrame(declutter));
+    map.on('idle', () => requestAnimationFrame(declutter));
+    setTimeout(declutter, 900); // depois da animação de entrada das etiquetas
     map.on('click', () => cb.current.onSelect(null));
     const ro = new ResizeObserver(() => map.resize());
     ro.observe(el);
