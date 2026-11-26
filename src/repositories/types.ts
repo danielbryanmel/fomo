@@ -1,4 +1,5 @@
 import type {
+  ReviewAspect,
   CreatePostInput,
   CrowdLevel,
   DateFilter,
@@ -99,7 +100,7 @@ export interface EventsRepository {
   moderate(eventId: string, approve: boolean): Promise<void>;
   myReview(eventId: string): Promise<ReviewView | null>;
   /** Cria ou edita a minha avaliação (1 por rolê). */
-  saveReview(eventId: string, rating: number, body: string | null): Promise<ReviewView>;
+  saveReview(eventId: string, rating: number, body: string | null, aspects?: ReviewAspect[]): Promise<ReviewView>;
 }
 
 export interface PostsRepository {

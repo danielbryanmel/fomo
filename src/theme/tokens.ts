@@ -4,89 +4,86 @@ import { Platform } from 'react-native';
  * Design tokens do FOMO — fonte única de cor, espaço, raio, tipografia e movimento.
  * Nenhum componente deve usar hex/números mágicos fora deste arquivo.
  *
- * Linguagem visual v2 ("termômetro da noite"):
- *  - fundo quase preto com brilhos difusos (Ambient) só em telas-chave;
- *  - títulos grandes e compactos + micro-rótulos mono em caixa alta para metadados;
- *  - escala de calor DENTRO da marca (roxo → magenta → rosa → rosa incandescente);
- *  - verde-limão reservado para "AO VIVO" e "+XP" (raro de propósito).
+ * Linguagem visual v3 (redesign "letreiro", nov/2026 — ver docs/design/GUIA.md):
+ *  - uma fonte só (Archivo); sem mono, sem rótulos em CAIXA ALTA ESPAÇADA;
+ *  - cor chapada, sem degradê; botão principal magenta com texto preto;
+ *  - título de marca (caixa alta, largo) só em onboarding, login, 404 e Minha noite;
+ *  - termômetro com cor fixa: Vazio · Tranquilo · Cheio · Lotado;
+ *  - verde-limão = "verdadeiro agora" (ao vivo, confirmado, credibilidade, cheguei bem);
+ *  - selecionado = branco com texto preto.
  */
 
-/** Cores da marca (símbolo) — amostradas da prancha "FOMO / Identidade V4". */
+/** Cores da marca. */
 export const brand = {
-  black: '#0A0A0C',
-  white: '#F4F3F6',
-  pink: '#C938AE',
-  pinkVivid: '#E8368C',
-  magenta: '#B93AC6',
-  purple: '#8A36E8',
-  highlight: '#FBE6F5',
-} as const;
-
-const palette = {
-  black: brand.black,
-  ink950: '#0F0E12',
-  ink900: '#141216',
-  ink800: '#1C1A20',
-  ink700: '#2C2A31',
-  ink500: '#7E7C86', // ≈ 4.7:1 sobre o fundo (AA)
-  ink300: '#B8B6C0',
-  white: '#FFFFFF',
-
-  pink: brand.pinkVivid,
-  magenta: brand.magenta,
-  purple: brand.purple,
-
-  live: '#D4FF3F',
-  success: '#34C77B',
-  warning: '#F5B93D',
-  danger: '#FF5A5F',
+  black: '#0A0A0B',
+  white: '#F4F1F6',
+  magenta: '#E0338F',
+  violeta: '#8A3FFC',
+  lima: '#D9FF42',
+  // compat (nomes antigos)
+  pink: '#E0338F',
+  pinkVivid: '#E0338F',
+  purple: '#8A3FFC',
+  highlight: '#F4F1F6',
 } as const;
 
 export const colors = {
-  background: palette.black,
-  surface: palette.ink950,
-  surfaceRaised: palette.ink800,
-  border: 'rgba(255,255,255,0.08)',
-  borderStrong: palette.ink700,
+  background: brand.black,
+  surface: '#151417',
+  surfaceRaised: '#1E1D22',
+  border: '#2A2930',
+  borderStrong: '#3A3842',
 
-  text: palette.white,
-  textSecondary: palette.ink300,
-  textMuted: palette.ink500,
-  textOnAccent: palette.white,
-  textOnLive: '#101208',
+  text: brand.white,
+  textSecondary: '#A9A3B2',
+  textMuted: '#6E6877',
+  /** Texto sobre magenta/lima/branco: preto. */
+  textOnAccent: brand.black,
+  textOnLive: brand.black,
 
-  accent: palette.magenta,
-  accentPink: palette.pink,
-  accentPurple: palette.purple,
-  /** Gradiente da marca: símbolo, CTA primário, progresso de nível. */
-  brandGradient: [palette.pink, palette.magenta, palette.purple] as const,
+  accent: brand.magenta,
+  accentPink: brand.magenta,
+  accentPurple: brand.violeta,
+  /** Sem degradê no redesign: mantido só por compatibilidade (todas as cores iguais = chapado). */
+  brandGradient: [brand.magenta, brand.magenta, brand.magenta] as const,
 
-  /** Sinal "ao vivo"/"+XP". Nunca como cor de fundo grande. */
-  live: palette.live,
+  /** "Verdadeiro agora": ao vivo, presença confirmada, credibilidade, cheguei bem. */
+  live: brand.lima,
 
-  /** Escala de lotação (1–4). Sempre acompanhada de texto e segmentos — nunca só cor. */
+  /** Termômetro (lotação 1–4) — mesma cor no mapa, lista, feed, story e grupos. */
   heat: {
-    none: '#3A3840',
-    1: '#7A4BEA', // tranquilo
-    2: '#B93AC6', // animado
-    3: '#E8368C', // cheio
-    4: '#FF5FA8', // lotado
+    none: '#4A4552',
+    1: '#4A4552', // vazio
+    2: brand.violeta, // tranquilo
+    3: brand.magenta, // cheio
+    4: brand.lima, // lotado
   },
 
-  success: palette.success,
-  warning: palette.warning,
-  danger: palette.danger,
+  /** Selecionado: fundo branco, texto preto. */
+  selected: brand.white,
+  onSelected: brand.black,
 
-  /** Indicadores sociais — visualmente distintos (decisão V2). */
+  success: brand.lima,
+  warning: '#F5B93D',
+  danger: '#FF5A5F',
+
   signal: {
-    popularity: palette.ink300,
-    experience: palette.purple,
-    credibility: palette.success,
+    popularity: '#A9A3B2',
+    experience: brand.violeta,
+    credibility: brand.lima,
   },
 
-  overlay: 'rgba(10,10,12,0.78)',
-  glass: 'rgba(20,18,24,0.72)',
+  overlay: 'rgba(10,10,11,0.82)',
+  glass: 'rgba(21,20,23,0.92)',
   pressed: 'rgba(255,255,255,0.06)',
+} as const;
+
+/** Escala de lotação (rótulo + cores da etiqueta). */
+export const heatScale = {
+  1: { label: 'Vazio', bg: '#2A2930', fg: '#A9A3B2', dot: '#4A4552' },
+  2: { label: 'Tranquilo', bg: brand.violeta, fg: brand.white, dot: brand.violeta },
+  3: { label: 'Cheio', bg: brand.magenta, fg: brand.black, dot: brand.magenta },
+  4: { label: 'Lotado', bg: brand.lima, fg: brand.black, dot: brand.lima },
 } as const;
 
 export const spacing = {
@@ -103,26 +100,44 @@ export const spacing = {
 
 export const radius = {
   sm: 8,
-  md: 14,
-  lg: 20,
-  xl: 28,
+  md: 12,
+  lg: 16,
+  xl: 24,
   pill: 999,
 } as const;
 
-const mono = Platform.select({ ios: 'Menlo', android: 'monospace', default: 'ui-monospace, SFMono-Regular, Menlo, monospace' });
+/** Archivo (estática, gerada da variável). Cada peso é uma família — funciona igual no iOS, Android e web. */
+export const fonts = {
+  regular: 'Archivo-Regular',
+  semibold: 'Archivo-SemiBold',
+  bold: 'Archivo-Bold',
+  extrabold: 'Archivo-ExtraBold',
+  black: 'Archivo-Black',
+  /** Título de marca: largura 112%, peso 900. */
+  brand: 'ArchivoExpanded-Black',
+} as const;
 
-/** Tipografia nativa (SF/Roboto/system-ui) + mono do sistema para micro-rótulos. */
+const f = (family: string) => ({ fontFamily: `${family}, Archivo, system-ui, sans-serif` }) as const;
+const fam = Platform.OS === 'web' ? f : (family: string) => ({ fontFamily: family });
+
+/** Tipografia: uma fonte só, frases normais (sem caixa alta espaçada). */
 export const typography = {
-  hero: { fontSize: 44, lineHeight: 46, fontWeight: '800', letterSpacing: -1.4 },
-  display: { fontSize: 32, lineHeight: 36, fontWeight: '800', letterSpacing: -0.9 },
-  title: { fontSize: 24, lineHeight: 28, fontWeight: '700', letterSpacing: -0.5 },
-  headline: { fontSize: 17, lineHeight: 22, fontWeight: '700', letterSpacing: -0.2 },
-  body: { fontSize: 15, lineHeight: 21, fontWeight: '400' },
-  bodyStrong: { fontSize: 15, lineHeight: 21, fontWeight: '600' },
-  caption: { fontSize: 13, lineHeight: 18, fontWeight: '400' },
-  label: { fontSize: 12, lineHeight: 16, fontWeight: '600', letterSpacing: 0.2 },
-  /** Metadados: "FESTA · TECHNO · 350 M". Mínimo 11 pt por legibilidade. */
-  mono: { fontSize: 11, lineHeight: 15, fontWeight: '500', letterSpacing: 1.2, fontFamily: mono, textTransform: 'uppercase' },
+  /** Título de marca (onboarding, login, 404, Minha noite): caixa alta, larga, 900. Demais títulos: largos em frase normal. */
+  brand: { fontSize: 42, lineHeight: 43, letterSpacing: -0.6, textTransform: 'uppercase', ...fam(fonts.brand) },
+  hero: { fontSize: 36, lineHeight: 40, letterSpacing: -0.6, ...fam(fonts.brand) },
+  /** Título de aba (Feed, Quero ir). */
+  display: { fontSize: 28, lineHeight: 33, letterSpacing: -0.5, ...fam(fonts.brand) },
+  /** Título de tela interna. */
+  title: { fontSize: 21, lineHeight: 26, letterSpacing: -0.3, ...fam(fonts.brand) },
+  headline: { fontSize: 17, lineHeight: 22, letterSpacing: -0.2, ...fam(fonts.brand) },
+  body: { fontSize: 15, lineHeight: 21, ...fam(fonts.regular) },
+  bodyStrong: { fontSize: 15, lineHeight: 21, ...fam(fonts.bold) },
+  caption: { fontSize: 13, lineHeight: 18, ...fam(fonts.regular) },
+  label: { fontSize: 13, lineHeight: 17, ...fam(fonts.semibold) },
+  /** Antigo "mono": agora rótulo de seção em frase normal (15/800). */
+  mono: { fontSize: 13, lineHeight: 18, ...fam(fonts.semibold) },
+  /** Título de seção. */
+  section: { fontSize: 15, lineHeight: 20, ...fam(fonts.extrabold) },
 } as const;
 
 export type TypographyVariant = keyof typeof typography;
@@ -144,7 +159,7 @@ export const motion = {
 /** Alvo mínimo de toque (Apple HIG 44pt / Material 48dp). */
 export const hitTarget = 48;
 
-/** Altura reservada para a tab bar flutuante (conteúdo rolável precisa de paddingBottom). */
+/** Altura reservada para a barra inferior fixa (conteúdo rolável precisa de paddingBottom). */
 export const TAB_BAR_SPACE = 96;
 
 export const tokens = { colors, spacing, radius, typography, motion, hitTarget } as const;

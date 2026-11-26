@@ -170,22 +170,17 @@ export function PostCardSkeleton() {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  header: { flexDirection: 'row', alignItems: 'center', paddingLeft: spacing.md, paddingRight: spacing.xs, paddingVertical: spacing.sm },
+  // redesign: post sangra a tela, sem card (só a linha entre posts)
+  card: { marginHorizontal: -spacing.lg, paddingBottom: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.surfaceRaised },
+  header: { flexDirection: 'row', alignItems: 'center', paddingLeft: spacing.lg, paddingRight: spacing.xs, paddingVertical: spacing.sm },
   author: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 2 },
   authorText: { flex: 1, gap: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   placeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   shrink: { flexShrink: 1 },
-  actions: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.xs },
-  body: { gap: spacing.xs + 2, paddingHorizontal: spacing.md, paddingBottom: spacing.md },
-  textBlock: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: spacing.xs },
+  actions: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.sm },
+  body: { gap: spacing.xs + 2, paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
+  textBlock: { paddingHorizontal: spacing.lg, paddingTop: spacing.xs, paddingBottom: spacing.xs },
   textOnly: { lineHeight: 24 },
   tags: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, marginTop: 2 },
   flex: { flex: 1 },

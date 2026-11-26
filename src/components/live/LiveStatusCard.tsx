@@ -3,7 +3,9 @@ import { LiveDot } from '@/components/ui/LiveDot';
 import { Text } from '@/components/ui/Text';
 import { CROWD_LABEL, LIVE_RULES } from '@/config/live';
 import { formatRelative } from '@/lib/format';
-import { colors, radius, spacing } from '@/theme';
+import Svg, { Path } from 'react-native-svg';
+import { FOMO_CRESCENT } from '@/components/brand/paths';
+import { colors, heatScale, radius, spacing } from '@/theme';
 import type { LiveStatus } from '@/types/domain';
 import { HeatMeter } from './HeatMeter';
 
@@ -11,24 +13,27 @@ import { HeatMeter } from './HeatMeter';
 export function LiveStatusCard({ status }: { status: LiveStatus }) {
   const level = status.crowd;
   return (
-    <View style={[styles.card, level ? { borderColor: `${colors.heat[level]}55` } : null]}>
+    <View style={styles.card}>
       <View style={styles.top}>
-        <Text variant="mono" tone="muted">agora</Text>
+        <Text variant="body" tone="secondary">Agora</Text>
         <View style={styles.liveRow}>
           <LiveDot />
-          <Text variant="mono" tone="live">
-            ao vivo{status.lastReportAt ? ` · há ${formatRelative(status.lastReportAt)}` : ''}
+          <Text variant="caption" tone="live" style={{ fontWeight: '700' }}>
+            Ao vivo{status.lastReportAt ? ` · há ${formatRelative(status.lastReportAt)}` : ''}
           </Text>
         </View>
       </View>
       {level ? (
         <>
-          <Text variant="hero" style={{ color: colors.heat[level] }} accessibilityRole="header">
-            {CROWD_LABEL[level]}
-          </Text>
+          <View style={styles.big}>
+            <Text variant="hero" style={{ color: heatScale[level].dot, fontSize: 48, lineHeight: 54, flex: 1 }} accessibilityRole="header">
+              {CROWD_LABEL[level]}
+            </Text>
+            <Svg width={40} height={40} viewBox="-100 -100 200 200"><Path d={FOMO_CRESCENT} fill={heatScale[level].dot} /></Svg>
+          </View>
           <HeatMeter level={level} height={8} />
-          <Text variant="mono" tone="muted">
-            {status.reportsCount} relatos de quem está lá · últimos {LIVE_RULES.reportTtlMin} min
+          <Text variant="caption" tone="secondary">
+            {status.reportsCount} relatos nos últimos {LIVE_RULES.reportTtlMin} min
           </Text>
         </>
       ) : (
@@ -49,12 +54,11 @@ export function LiveStatusCard({ status }: { status: LiveStatus }) {
 const styles = StyleSheet.create({
   card: {
     gap: spacing.md,
-    padding: spacing.xl,
+    padding: spacing.lg,
     borderRadius: radius.lg,
-    backgroundColor: 'rgba(20,18,24,0.85)',
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.surface,
   },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  big: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   liveRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });

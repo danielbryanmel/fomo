@@ -13,7 +13,7 @@ import { readPreciseOnce } from '@/features/location/useLocation';
 import { useAsync } from '@/hooks/useAsync';
 import { distanceM } from '@/lib/geo';
 import { DATA_SOURCE, repositories } from '@/repositories';
-import { colors, radius, spacing } from '@/theme';
+import { colors, heatScale, radius, spacing } from '@/theme';
 import type { CrowdLevel, GeoPoint, MusicLevel, QueueLevel, VibeLevel } from '@/types/domain';
 
 type LocState = 'checking' | 'confirmed' | 'far' | 'denied' | 'demo';
@@ -148,10 +148,10 @@ export default function ReportScreen() {
         ) : null}
 
         <View style={[styles.form, !(loc === 'confirmed' || loc === 'demo') && styles.disabled]} pointerEvents={loc === 'confirmed' || loc === 'demo' ? 'auto' : 'none'}>
-          <OptionGrid label="lotação" options={([1, 2, 3, 4] as CrowdLevel[]).map((k) => ({ key: k, label: CROWD_LABEL[k] }))} value={crowd} onChange={setCrowd} activeColor={(k) => colors.heat[k]} />
+          <OptionGrid label="lotação" options={([1, 2, 3, 4] as CrowdLevel[]).map((k) => ({ key: k, label: CROWD_LABEL[k] }))} value={crowd} onChange={setCrowd} activeColor={(k) => heatScale[k].bg} activeText={(k) => heatScale[k].fg} dot={(k) => heatScale[k].dot} />
           <OptionGrid label="vibe" options={entries(VIBE_LABEL)} value={vibe} onChange={setVibe} />
-          <OptionGrid label="fila na entrada" options={entries(QUEUE_LABEL)} value={queue} onChange={setQueue} />
-          <OptionGrid label="música / dj" options={entries(MUSIC_LABEL)} value={music} onChange={setMusic} optional />
+          <OptionGrid label="Fila na entrada" options={entries(QUEUE_LABEL)} value={queue} onChange={setQueue} />
+          <OptionGrid label="Música / DJ" options={entries(MUSIC_LABEL)} value={music} onChange={setMusic} optional />
         </View>
 
         {error ? <Text tone="danger" accessibilityRole="alert">{error}</Text> : null}
@@ -171,12 +171,12 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.lg, gap: spacing.lg },
   close: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.glass, borderWidth: 1, borderColor: colors.border },
   locLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 20, marginTop: -spacing.sm },
-  locCard: { flexDirection: 'row', gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  locCard: { flexDirection: 'row', gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface },
   locActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, flexWrap: 'wrap' },
   form: { gap: spacing.xl, marginTop: spacing.sm },
   disabled: { opacity: 0.35 },
   flex: { flex: 1, gap: spacing.xs },
-  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: 'rgba(10,10,12,0.92)' },
+  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: 'rgba(10,10,11,0.92)' },
   doneIcon: { width: 96, height: 96, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', marginBottom: spacing.sm },
   doneText: { maxWidth: 300 },
   verified: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill, borderWidth: 1, borderColor: 'rgba(212,255,63,0.3)' },

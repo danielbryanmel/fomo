@@ -1,4 +1,5 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { REVIEW_ASPECTS } from '@/config/live';
 import { Users } from 'lucide-react-native';
 import { FomoSaveIcon } from '@/components/icons/FomoIcons';
 import { CalendarX, ChevronLeft, ImagePlus, MapPinned, Navigation, Share2, Star, Ticket } from 'lucide-react-native';
@@ -13,7 +14,8 @@ import { StatTile } from '@/components/live/StatTile';
 import { PostCard } from '@/components/post/PostCard';
 import { RatingStars } from '@/components/post/RatingStars';
 import { Appear } from '@/components/motion';
-import { Ambient, Avatar, Button, Screen, Skeleton, StateView, Text, useToast } from '@/components/ui';
+import { Image } from 'expo-image';
+import { Avatar, Button, Screen, Skeleton, StateView, Text, useToast } from '@/components/ui';
 import { MUSIC_LABEL, QUEUE_HINT, QUEUE_LABEL, VIBE_LABEL } from '@/config/live';
 import { useAsync } from '@/hooks/useAsync';
 import { checkinOpen, formatHours, isHappeningNow } from '@/lib/events';
@@ -88,16 +90,29 @@ export default function EventDetailScreen() {
   return (
     <View style={styles.root}>
       <Stack.Screen options={{ headerShown: false }} />
-      <Ambient variant="top" intensity={0.8} />
-      <ScrollView contentContainerStyle={{ paddingTop: insets.top + 64, paddingBottom: insets.bottom + 110 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: e.coverUrl ? 0 : insets.top + 64, paddingBottom: insets.bottom + 110 }}>
+        {e.coverUrl ? (
+          <View style={[styles.hero, { paddingTop: insets.top + 64 }]}>
+            <Image source={{ uri: e.coverUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(10,10,11,0.45)' }]} />
+            <View style={styles.heroText}>
+              <View style={styles.heroMeta}>
+                <View style={styles.catTag}><Text style={{ fontSize: 12, fontWeight: '800', color: colors.background }}>{e.category.name}</Text></View>
+                <Text variant="caption" style={{ fontWeight: '600' }}>{formatHours(e)}</Text>
+              </View>
+              <Text variant="hero" accessibilityRole="header">{e.title}</Text>
+              <Text variant="caption" tone="secondary">{[e.venueName, e.address].filter(Boolean).join(' · ') || 'Local a confirmar'}</Text>
+            </View>
+          </View>
+        ) : null}
         <View style={styles.body}>
-          <View style={styles.titleBlock}>
+          {!e.coverUrl ? (<View style={styles.titleBlock}>
             <Text variant="mono" tone="secondary">
               {[e.category.name, formatHours(e), e.isSponsored ? 'patrocinado' : null, e.isDemo ? 'demo · local fictício' : null, e.status === 'pending' ? 'em moderação' : null, ended ? (e.status === 'cancelled' ? 'cancelado' : 'encerrado') : null].filter(Boolean).join(' · ')}
             </Text>
             <Text variant="hero" accessibilityRole="header">{e.title}</Text>
             <Text variant="mono" tone="muted">{[e.venueName, e.address].filter(Boolean).join(' · ') || 'local a confirmar'}</Text>
-          </View>
+          </View>) : null}
 
           {now && s ? <LiveStatusCard status={s} /> : null}
           {now && live.loading ? <Skeleton height={190} rounded={radius.lg} /> : null}
@@ -147,7 +162,7 @@ export default function EventDetailScreen() {
               <Button
                 label="Avaliar este rolê"
                 variant="secondary"
-                icon={<Star size={18} color={colors.warning} />}
+                icon={<Star size={18} color={colors.accent} />}
                 onPress={() => router.push({ pathname: '/review/[id]', params: { id: e.id } })}
               />
             ) : null}
@@ -159,6 +174,7 @@ export default function EventDetailScreen() {
                   <RatingStars value={r.rating} />
                 </View>
                 {r.body ? <Text tone="secondary">{r.body}</Text> : null}
+                {r.aspects?.length ? <Text variant="caption" tone="secondary">Pesou: {r.aspects.map((a) => REVIEW_ASPECTS[a]).join(' · ')}</Text> : null}
                 <Text variant="mono" tone="muted">há {formatRelative(r.createdAt)} · {r.helpfulCount} acharam útil</Text>
               </Appear>
             ))}
@@ -219,11 +235,15 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   body: { paddingHorizontal: spacing.lg, gap: spacing.lg },
   titleBlock: { gap: spacing.sm, marginBottom: spacing.sm },
-  upcoming: { gap: spacing.xs, padding: spacing.xl, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  hero: { minHeight: 340, justifyContent: 'flex-end', marginBottom: spacing.md, overflow: 'hidden' },
+  heroText: { gap: spacing.xs, paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
+  heroMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  catTag: { backgroundColor: colors.text, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  upcoming: { gap: spacing.xs, padding: spacing.xl, borderRadius: radius.lg, backgroundColor: colors.surface },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   section: { gap: spacing.md, marginTop: spacing.md },
-  review: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  review: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.md, backgroundColor: colors.surface },
   reviewHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   flex: { flex: 1 },
   skeleton: { gap: spacing.md, paddingTop: spacing.xxxl },
@@ -231,6 +251,6 @@ const styles = StyleSheet.create({
   glass: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.glass, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   bar: {
     position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: 'rgba(10,10,12,0.92)', borderTopWidth: 1, borderTopColor: colors.border,
+    paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: 'rgba(10,10,11,0.92)', borderTopWidth: 1, borderTopColor: colors.border,
   },
 });

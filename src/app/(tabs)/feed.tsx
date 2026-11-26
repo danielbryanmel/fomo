@@ -8,7 +8,7 @@ import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, View } from 'r
 import { PostCard, PostCardSkeleton } from '@/components/post/PostCard';
 import { SuggestionsStrip } from '@/components/profile/Suggestions';
 import { StoriesTray } from '@/components/story/StoriesTray';
-import { Chip, NotificationBell, Screen, ScreenHeader, StateView, Text } from '@/components/ui';
+import { NotificationBell, Screen, ScreenHeader, StateView, TextTabs } from '@/components/ui';
 import { Appear } from '@/components/motion';
 import { usePaginated } from '@/hooks/usePaginated';
 import { repositories } from '@/repositories';
@@ -60,14 +60,7 @@ export default function FeedScreen() {
               }
             />
             <StoriesTray />
-            <View style={styles.tabs} accessibilityRole="tablist">
-              {TABS.map((t) => (
-                <Chip key={t.key} label={t.label} selected={tab === t.key} onPress={() => setTab(t.key)} />
-              ))}
-            </View>
-            {tab === 'for_you' ? (
-              <Text variant="caption" tone="muted">Ordenado por atualidade, qualidade de quem publica e interesse — curtidas pesam pouco.</Text>
-            ) : null}
+            <TextTabs tabs={TABS} value={tab} onChange={setTab} />
             <SuggestionsStrip />
           </View>
         }

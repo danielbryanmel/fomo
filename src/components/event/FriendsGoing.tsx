@@ -26,7 +26,7 @@ export function FriendsGoing({ people }: { people: UserProfile[] }) {
           ))}
         </View>
         <View style={styles.flex}>
-          <Text variant="mono" tone="muted">quem tá indo</Text>
+          <Text variant="caption" tone="secondary">{people.length === 1 ? '1 amigo quer ir' : `${people.length} amigos querem ir`}</Text>
           <Text variant="body" numberOfLines={2}>{label}</Text>
         </View>
       </PressableScale>
@@ -35,7 +35,7 @@ export function FriendsGoing({ people }: { people: UserProfile[] }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: 'rgba(232,54,140,0.35)' },
+  root: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface },
   stack: { flexDirection: 'row' },
   ring: { borderRadius: 18, borderWidth: 2, borderColor: colors.surface },
   flex: { flex: 1, gap: 2 },

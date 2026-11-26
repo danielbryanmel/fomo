@@ -1,28 +1,20 @@
 /**
  * Ícones de interação PRÓPRIOS do FOMO (não são os do Instagram):
- *  - Curtir  → "Fomo": o próprio símbolo da marca (o olhar que escapa). Ativo = gradiente oficial.
+ *  - Curtir  → "Fomo": o próprio símbolo da marca (o olhar que escapa). Ativo = magenta chapado (meia-lua cheia).
  *  - Comentar → "Papo": balão quadrado-arredondado com a cauda saindo pela esquerda.
  *  - Chamar  → "Chama a galera": seta saindo de uma órbita (convite, não "enviar DM").
  *  - Salvar  → "Quero ir": ingresso com picote — salvar um rolê é guardar o ingresso.
  * Todos em grade 24×24, traço 1.9, cantos arredondados — mesma família do lucide usado no resto do app.
  */
 import { useId } from 'react';
-import Svg, { Circle, Defs, G, LinearGradient, Path, Stop } from 'react-native-svg';
+import Svg, { Circle, G, Path } from 'react-native-svg';
 import { FOMO_MARK_PATH } from '@/components/brand/FomoMark';
 import { colors } from '@/theme';
 
 type IconProps = { size?: number; color?: string; active?: boolean; strokeWidth?: number };
 
-function BrandGradient({ id }: { id: string }) {
-  return (
-    <Defs>
-      <LinearGradient id={id} x1="0" y1="1" x2="1" y2="0">
-        <Stop offset="0" stopColor={colors.brandGradient[0]} />
-        <Stop offset="0.55" stopColor={colors.brandGradient[1]} />
-        <Stop offset="1" stopColor={colors.brandGradient[2]} />
-      </LinearGradient>
-    </Defs>
-  );
+function BrandGradient(_: { id: string }) {
+  return null; // redesign: sem degradê, curtido = magenta chapado
 }
 
 const useGid = (p: string) => `${p}${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -31,13 +23,13 @@ const useGid = (p: string) => `${p}${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 export function FomoLikeIcon({ size = 24, color = colors.text, active, strokeWidth = 1.9 }: IconProps) {
   const gid = useGid('lk');
   // o símbolo vive numa grade 100×100; escalamos para caber em 24 com respiro
-  const sw = (strokeWidth * 100) / 20;
+  const sw = (strokeWidth * 200) / 20;
   return (
-    <Svg width={size} height={size} viewBox="-8 -8 116 116">
+    <Svg width={size} height={size} viewBox="-116 -116 232 232">
       {active ? <BrandGradient id={gid} /> : null}
       <Path
         d={FOMO_MARK_PATH}
-        fill={active ? `url(#${gid})` : 'none'}
+        fill={active ? colors.accent : 'none'}
         stroke={active ? 'none' : color}
         strokeWidth={sw}
         strokeLinejoin="round"
@@ -80,7 +72,7 @@ export function FomoSaveIcon({ size = 24, color = colors.text, active, strokeWid
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       {active ? <BrandGradient id={gid} /> : null}
-      <Path d={d} fill={active ? `url(#${gid})` : 'none'} stroke={active ? 'none' : color} strokeWidth={strokeWidth} strokeLinejoin="round" />
+      <Path d={d} fill={active ? colors.accent : 'none'} stroke={active ? 'none' : color} strokeWidth={strokeWidth} strokeLinejoin="round" />
       <G opacity={active ? 0.9 : 1}>
         <Path d="M15 8.25v1M15 11.5v1M15 14.75v1" stroke={active ? colors.background : color} strokeWidth={strokeWidth * 0.9} strokeLinecap="round" />
       </G>
@@ -92,9 +84,9 @@ export function FomoSaveIcon({ size = 24, color = colors.text, active, strokeWid
 export function FomoBurst({ size = 96 }: { size?: number }) {
   const gid = useGid('bu');
   return (
-    <Svg width={size} height={size} viewBox="-6 -6 112 112">
+    <Svg width={size} height={size} viewBox="-112 -112 224 224">
       <BrandGradient id={gid} />
-      <Path d={FOMO_MARK_PATH} fill={`url(#${gid})`} />
+      <Path d={FOMO_MARK_PATH} fill={colors.accent} />
       <Circle cx="84" cy="14" r="4" fill={colors.text} opacity={0.9} />
       <Circle cx="96" cy="30" r="2.5" fill={colors.text} opacity={0.7} />
     </Svg>

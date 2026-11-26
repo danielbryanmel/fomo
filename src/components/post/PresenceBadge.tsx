@@ -42,5 +42,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  verified: { borderColor: 'rgba(52,199,123,0.45)' },
+  verified: { borderColor: colors.live },
 });

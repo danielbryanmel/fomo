@@ -62,13 +62,10 @@ export default function GroupScreen() {
         <Appear>
           <View style={styles.hero}>
             <Text variant="mono" tone="muted">{whenLabel(g.event.startsAt)}</Text>
-            <Text variant="display">{g.name}</Text>
+            <Text variant="display" style={{ fontSize: 26, lineHeight: 31 }}>{g.name}</Text>
             <Text variant="mono" tone="secondary">{g.event.title}{g.event.venueName ? ` · ${g.event.venueName}` : ''}</Text>
             <Text variant="headline" style={styles.big}>{g.counts.going} {g.counts.going === 1 ? 'pessoa confirmada' : 'pessoas confirmadas'}</Text>
             <RespondButtons group={g} onChange={(x) => group.setData(() => x)} />
-            {inIt && started ? (
-              <Button label="Cheguei bem em casa" icon={<House size={16} color={colors.text} />} onPress={arrived} fullWidth />
-            ) : null}
             <View style={styles.actions}>
               <Button label="Ver rolê" variant="secondary" icon={<MapPinned size={16} color={colors.text} />} onPress={() => router.push({ pathname: '/event/[id]', params: { id: g.event.id } })} />
               {g.myStatus === 'going' ? (
@@ -85,7 +82,18 @@ export default function GroupScreen() {
           </View>
         ) : null}
 
-        {inIt || g.myStatus === 'going' ? <LiveLocation groupId={g.id} canShare={inIt && !discreet} /> : null}
+        {inIt || g.myStatus === 'going' ? (
+          <View style={styles.section}>
+            <View style={styles.sectionHead}>
+              <Text variant="section">Volta pra casa</Text>
+              <Text variant="caption" tone="muted">Só o grupo vê</Text>
+            </View>
+            <LiveLocation groupId={g.id} canShare={inIt && !discreet} />
+            {inIt && started ? (
+              <Button label="Cheguei bem em casa" variant="safe" icon={<House size={16} color={colors.background} />} onPress={arrived} fullWidth />
+            ) : null}
+          </View>
+        ) : null}
 
         <Polls groupId={g.id} polls={g.polls ?? []} canCreate={g.myStatus === 'going' || g.myStatus === 'maybe'} onChange={() => void group.refresh()} />
 
@@ -124,8 +132,9 @@ export default function GroupScreen() {
 }
 
 const styles = StyleSheet.create({
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   pad: { padding: spacing.lg, gap: spacing.lg, paddingBottom: 60 },
-  hero: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  hero: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.xl, backgroundColor: colors.surface },
   big: { marginTop: spacing.sm },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
   section: { gap: spacing.xs },

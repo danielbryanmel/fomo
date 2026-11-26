@@ -16,3 +16,4 @@ export * from './Ambient';
 export * from './LiveDot';
 export * from './NotificationBell';
 export * from './DemoTag';
+export * from './TextTabs';

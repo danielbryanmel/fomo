@@ -15,7 +15,8 @@ import { Minus, Plus } from 'lucide-react-native';
 import { useEffect, useImperativeHandle, useRef } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Region } from '@/lib/geo';
-import { colors, radius, spacing } from '@/theme';
+import { CROWD_LABEL } from '@/config/live';
+import { colors, heatScale, radius, spacing } from '@/theme';
 import type { GeoPoint, MapEvent } from '@/types/domain';
 import type { ExploreMapProps } from './ExploreMap.types';
 import { FOMO_MAP_STYLE, MAP_ATTRIBUTION } from './fomoMapStyle';
@@ -31,7 +32,7 @@ function injectCss() {
   el.id = STYLE_ID;
   el.textContent = `
     .fomo-map { background: ${colors.background}; }
-    .fomo-map .maplibregl-ctrl-attrib { background: rgba(10,10,12,.72) !important; color: #6f6a78; font-size: 10px; }
+    .fomo-map .maplibregl-ctrl-attrib { background: rgba(10,10,11,.72) !important; color: #6f6a78; font-size: 10px; }
     .fomo-map .maplibregl-ctrl-attrib a { color: #a29cad; }
     .fomo-map .maplibregl-ctrl-attrib-button { filter: invert(1) opacity(.55); }
     .fomo-map .maplibregl-ctrl-top-left { margin-top: var(--fomo-top, 120px); }
@@ -41,13 +42,13 @@ function injectCss() {
     .fomo-pin-halo { position: absolute; border-radius: 999px; animation: fomoPulse 2.4s ease-out infinite; }
     .fomo-pin-dot { border-radius: 999px; box-sizing: border-box; transition: transform .25s cubic-bezier(.2,1.4,.4,1); }
     .fomo-pin-wrap:hover .fomo-pin-dot { transform: scale(1.2); }
-    .fomo-pin-label { max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px 9px;
-      border-radius: 999px; background: rgba(10,10,12,.86); color: #fff; font: 600 11px/1.25 -apple-system, system-ui, sans-serif;
-      border: 1px solid rgba(255,255,255,.08); animation: fomoLabelIn .3s ease both; }
+    .fomo-pin-label { max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 4px 9px;
+      border-radius: 8px; background: rgba(21,20,23,.92); color: #F4F1F6; font: 700 13px/1.25 Archivo-Bold, Archivo, system-ui, sans-serif;
+      animation: fomoLabelIn .3s ease both; }
     .fomo-pin-label.sel { border-color: rgba(255,255,255,.28); }
     .fomo-user { position: relative; width: 18px; height: 18px; }
-    .fomo-user::before { content: ''; position: absolute; inset: -10px; border-radius: 50%; background: rgba(76,141,255,.28); animation: fomoPulse 2.2s ease-out infinite; }
-    .fomo-user::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #4C8DFF; border: 3px solid #fff; box-sizing: border-box; box-shadow: 0 2px 10px rgba(0,0,0,.5); }
+    .fomo-user::before { content: ''; position: absolute; inset: -10px; border-radius: 50%; background: rgba(244,241,246,.16); animation: fomoPulse 2.2s ease-out infinite; }
+    .fomo-user::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: #F4F1F6; border: 5px solid #0A0A0B; box-sizing: border-box; box-shadow: 0 2px 10px rgba(0,0,0,.5); }
     @keyframes fomoPinIn { from { transform: scale(0); opacity: 0 } to { transform: scale(1); opacity: 1 } }
     @keyframes fomoLabelIn { from { transform: translateX(-6px); opacity: 0 } to { transform: none; opacity: 1 } }
     @keyframes fomoPulse { 0% { transform: scale(.6); opacity: .5 } 100% { transform: scale(1.5); opacity: 0 } }
@@ -58,20 +59,20 @@ function injectCss() {
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
-/** Mesmo desenho do MapPin nativo, em HTML. */
+/** Pin (redesign): ponto na cor fixa do termômetro + etiqueta "Nome  Status". Só "Lotado" pulsa (limão = verdadeiro agora). */
 function pinHtml(e: MapEvent, selected: boolean) {
   const level = e.live?.crowd ?? null;
   const now = e.happeningNow;
-  const color = level ? colors.heat[level] : now ? colors.text : colors.textSecondary;
-  const size = selected ? 20 : level ? 12 + level : 11;
-  const halo = level ? size + 10 + level * 4 : 0;
-  const box = Math.max(halo, size, 24);
-  const dot = `width:${size}px;height:${size}px;background:${now ? color : colors.background};border:${now ? (selected ? 3 : 1.5) : 2.5}px solid ${
-    now ? (selected ? colors.text : 'rgba(0,0,0,.5)') : color
-  };${selected ? `box-shadow:0 0 0 6px ${color}40;` : ''}`;
-  const label = selected || (level ?? 0) >= 3 || (!e.isDemo && !now) ? `<div class="fomo-pin-label${selected ? ' sel' : ''}">${esc(e.venueName ?? e.title)}</div>` : '';
+  const color = level ? heatScale[level].dot : now ? colors.text : colors.textMuted;
+  const size = selected ? 20 : 16;
+  const box = Math.max(size, 24);
+  const dot = `width:${size}px;height:${size}px;background:${now ? color : colors.background};border:${now ? (selected ? 3 : 0) : 2.5}px solid ${
+    now ? colors.text : color
+  };`;
+  const status = level ? ` <b style="color:${level === 1 ? colors.textSecondary : heatScale[level].dot};font-weight:800">${CROWD_LABEL[level]}</b>` : '';
+  const label = selected || level || (!e.isDemo && !now) ? `<div class="fomo-pin-label${selected ? ' sel' : ''}">${esc(e.venueName ?? e.title)}${status}</div>` : '';
   return `<div class="fomo-pin-box" style="width:${box}px;height:${box}px">${
-    level ? `<div class="fomo-pin-halo" style="width:${halo}px;height:${halo}px;background:${color}"></div>` : ''
+    level === 4 ? `<div class="fomo-pin-halo" style="width:${size + 14}px;height:${size + 14}px;background:${color}"></div>` : ''
   }<div class="fomo-pin-dot" style="${dot}"></div></div>${label}`;
 }
 
@@ -237,6 +238,7 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
         id: 'heat',
         type: 'heatmap',
         source: 'heat',
+        layout: { visibility: 'none' }, // redesign: sem degradê no mapa
         paint: {
           'heatmap-weight': ['get', 'w'],
           'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 10, 28, 13, 60, 16, 120],
@@ -244,13 +246,13 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
           'heatmap-opacity': 0.55,
           'heatmap-color': [
             'interpolate', ['linear'], ['heatmap-density'],
-            0, 'rgba(0,0,0,0)', 0.15, 'rgba(122,75,234,0.25)', 0.4, 'rgba(185,58,198,0.45)', 0.7, 'rgba(232,54,140,0.6)', 1, 'rgba(255,95,168,0.75)',
+            0, 'rgba(0,0,0,0)', 0.15, 'rgba(122,75,234,0.25)', 0.4, 'rgba(185,58,198,0.45)', 0.7, 'rgba(224,51,143,0.6)', 1, 'rgba(255,95,168,0.75)',
           ],
         },
       });
       map.addSource('accuracy', { type: 'geojson', data: EMPTY });
-      map.addLayer({ id: 'accuracy-fill', type: 'fill', source: 'accuracy', paint: { 'fill-color': '#4C8DFF', 'fill-opacity': 0.1 } });
-      map.addLayer({ id: 'accuracy-line', type: 'line', source: 'accuracy', paint: { 'line-color': '#4C8DFF', 'line-opacity': 0.45, 'line-width': 1 } });
+      map.addLayer({ id: 'accuracy-fill', type: 'fill', source: 'accuracy', paint: { 'fill-color': '#F4F1F6', 'fill-opacity': 0.06 } });
+      map.addLayer({ id: 'accuracy-line', type: 'line', source: 'accuracy', paint: { 'line-color': '#F4F1F6', 'line-opacity': 0.2, 'line-width': 1 } });
       ready.current = true;
       syncPins();
       syncUser();

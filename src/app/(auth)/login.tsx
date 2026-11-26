@@ -3,12 +3,12 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { FomoLockup } from '@/components/brand/FomoLockup';
-import { FomoMark } from '@/components/brand/FomoMark';
+import { Check, Eye, EyeOff } from 'lucide-react-native';
 import { Appear } from '@/components/motion';
-import { Ambient, Button, Screen, Text } from '@/components/ui';
+import { Button, familyFor, Screen, Text } from '@/components/ui';
 import { authMode } from '@/config/env';
 import { useAuth } from '@/features/auth/AuthProvider';
-import { colors, hitTarget, radius, spacing, typography } from '@/theme';
+import { colors, spacing, typography } from '@/theme';
 
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
 
@@ -21,17 +21,15 @@ export default function LoginScreen() {
   return authMode === 'otp' ? <OtpLogin /> : <PasswordLogin />;
 }
 
-function Shell({ subtitle, children, footer }: { subtitle: string; children: ReactNode; footer: ReactNode }) {
+function Shell({ title, subtitle, children, footer }: { title: string; subtitle: string; children: ReactNode; footer: ReactNode }) {
   return (
     <Screen edges={['top', 'bottom']} contentStyle={styles.root}>
-      <Ambient variant="center" intensity={0.9} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <View style={styles.top}><FomoLockup size={24} /></View>
         <View style={styles.center}>
-          <Appear kind="zoom"><FomoMark size={88} variant="glass" /></Appear>
-          <Appear delay={80}><Text variant="hero" align="center">De olho no rolê.</Text></Appear>
-          <Appear delay={140}><Text tone="secondary" align="center">{subtitle}</Text></Appear>
-          <Appear delay={200} style={styles.fields}>{children}</Appear>
+          <View style={styles.top}><FomoLockup size={26} /></View>
+          <Appear delay={60}><Text variant="brand" accessibilityRole="header">{title}</Text></Appear>
+          <Appear delay={120}><Text tone="secondary" style={{ fontSize: 17, lineHeight: 24 }}>{subtitle}</Text></Appear>
+          <Appear delay={180} style={styles.fields}>{children}</Appear>
         </View>
         <View style={styles.bottom}>
           {footer}
@@ -97,7 +95,8 @@ function PasswordForm({ mode, setMode, auth }: { mode: 'signUp' | 'signIn'; setM
 
   return (
     <Shell
-      subtitle={mode === 'signUp' ? 'Crie sua conta em 10 segundos.' : 'Bom te ver de volta.'}
+      title={mode === 'signUp' ? 'Cria sua conta.' : 'Bom te ver de volta.'}
+      subtitle={mode === 'signUp' ? 'Leva 10 segundos.' : 'Entra pra ver onde tá bom agora.'}
       footer={
         <>
           <Button label={mode === 'signUp' ? 'Criar conta' : 'Entrar'} fullWidth loading={busy} disabled={!canSubmit} onPress={submit} />
@@ -111,6 +110,7 @@ function PasswordForm({ mode, setMode, auth }: { mode: 'signUp' | 'signIn'; setM
         </>
       }
     >
+      <Text style={styles.label}>E-mail</Text>
       <TextInput
         value={email}
         onChangeText={setEmail}
@@ -123,6 +123,7 @@ function PasswordForm({ mode, setMode, auth }: { mode: 'signUp' | 'signIn'; setM
         style={styles.input}
         accessibilityLabel="E-mail"
       />
+      <Text style={styles.label}>Senha</Text>
       <View>
         <TextInput
           value={password}
@@ -138,15 +139,27 @@ function PasswordForm({ mode, setMode, auth }: { mode: 'signUp' | 'signIn'; setM
           accessibilityLabel="Senha"
         />
         <Pressable onPress={() => setShow((v) => !v)} style={styles.eye} accessibilityRole="button" accessibilityLabel={show ? 'Ocultar senha' : 'Mostrar senha'}>
-          <Text variant="mono" tone="secondary">{show ? 'ocultar' : 'mostrar'}</Text>
+          {show ? <EyeOff size={22} color={colors.textSecondary} /> : <Eye size={22} color={colors.textSecondary} />}
         </Pressable>
       </View>
-      {mode === 'signUp' && password.length > 0 && !strongEnough ? (
-        <Text variant="caption" tone="muted">Use pelo menos 8 caracteres, com letras e números.</Text>
+      {mode === 'signUp' && password.length > 0 ? (
+        <View style={{ flexDirection: 'row', gap: spacing.lg }}>
+          <Rule ok={password.length >= 8} label="8 ou mais caracteres" />
+          <Rule ok={/[a-zA-Z]/.test(password) && /\d/.test(password)} label="letras e números" />
+        </View>
       ) : null}
       {error ? <Text tone="danger" align="center" accessibilityRole="alert">{error}</Text> : null}
       {info ? <Text tone="live" align="center" accessibilityRole="alert">{info}</Text> : null}
     </Shell>
+  );
+}
+
+function Rule({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+      <Check size={14} color={ok ? colors.live : colors.textMuted} strokeWidth={2.6} />
+      <Text variant="caption" style={{ color: ok ? colors.live : colors.textMuted, fontWeight: '600' }}>{label}</Text>
+    </View>
   );
 }
 
@@ -174,7 +187,8 @@ function ResetPassword({ onBack }: { onBack: () => void }) {
 
   return (
     <Shell
-      subtitle={step === 'email' ? 'Mandamos um código de 6 dígitos para o seu e-mail.' : `Digite o código enviado para ${email.trim()} e a nova senha.`}
+      title="Esqueceu a senha?"
+      subtitle={step === 'email' ? 'Manda seu e-mail que a gente envia um código de 6 dígitos.' : `Digite o código enviado para ${email.trim()} e a nova senha.`}
       footer={
         <>
           {step === 'email' ? (
@@ -224,6 +238,7 @@ function OtpLogin() {
 
   return (
     <Shell
+      title="De olho no rolê."
       subtitle={step === 'email' ? 'Entre com seu e-mail. Mandamos um código — sem senha.' : `Digite o código enviado para ${email.trim()}.`}
       footer={
         step === 'email' ? (
@@ -270,17 +285,18 @@ function OtpLogin() {
 const styles = StyleSheet.create({
   root: { paddingBottom: spacing.lg },
   flex: { flex: 1, justifyContent: 'space-between' },
-  top: { paddingTop: spacing.sm },
-  center: { alignItems: 'center', gap: spacing.lg, maxWidth: 420, width: '100%', alignSelf: 'center' },
-  fields: { width: '100%', gap: spacing.md },
+  top: { paddingTop: spacing.sm, marginBottom: spacing.xxl },
+  center: { gap: spacing.md, maxWidth: 480, width: '100%', alignSelf: 'center' },
+  fields: { width: '100%', gap: spacing.sm, marginTop: spacing.lg },
+  label: { fontSize: 14, fontWeight: '700', color: colors.textSecondary, marginTop: spacing.sm },
   input: {
-    width: '100%', minHeight: hitTarget + 8, paddingHorizontal: spacing.lg, borderRadius: radius.md,
-    backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderStrong, color: colors.text,
+    width: '100%', minHeight: 54, paddingHorizontal: spacing.lg, borderRadius: 14, fontFamily: familyFor('400'),
+    backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border, color: colors.text,
     // 16px+ evita o zoom automático do Safari no iPhone ao focar
     fontSize: Math.max(16, typography.headline.fontSize),
   },
   pwd: { paddingRight: 92 },
   eye: { position: 'absolute', right: spacing.md, top: 0, bottom: 0, justifyContent: 'center', paddingHorizontal: spacing.sm },
   code: { textAlign: 'center', letterSpacing: 10, fontSize: 26, fontWeight: '700' },
-  bottom: { gap: spacing.sm, maxWidth: 420, width: '100%', alignSelf: 'center' },
+  bottom: { gap: spacing.sm, maxWidth: 480, width: '100%', alignSelf: 'center' },
 });

@@ -14,5 +14,5 @@ export function StatTile({ label, value, detail }: { label: string; value: strin
 }
 
 const styles = StyleSheet.create({
-  tile: { flex: 1, minWidth: 140, gap: 4, padding: spacing.lg, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  tile: { flex: 1, minWidth: 140, gap: 4, padding: spacing.lg, borderRadius: radius.md, backgroundColor: colors.surface },
 });

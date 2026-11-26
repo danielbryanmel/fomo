@@ -7,6 +7,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { Platform } from 'react-native';
 import { PressableScale } from '@/components/motion/PressableScale';
 import { WebFrame } from '@/components/web/WebFrame';
+import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -53,6 +54,15 @@ const navigationTheme: Theme = {
 };
 
 export default function RootLayout() {
+  // Archivo (estática). Sem bloquear: se demorar, o texto aparece no sistema e troca sozinho.
+  useFonts({
+    'Archivo-Regular': require('../../assets/fonts/Archivo-Regular.ttf'),
+    'Archivo-SemiBold': require('../../assets/fonts/Archivo-SemiBold.ttf'),
+    'Archivo-Bold': require('../../assets/fonts/Archivo-Bold.ttf'),
+    'Archivo-ExtraBold': require('../../assets/fonts/Archivo-ExtraBold.ttf'),
+    'Archivo-Black': require('../../assets/fonts/Archivo-Black.ttf'),
+    'ArchivoExpanded-Black': require('../../assets/fonts/ArchivoExpanded-Black.ttf'),
+  });
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
     <SafeAreaProvider>
@@ -95,7 +105,7 @@ export default function RootLayout() {
             <Stack.Screen name="messages/[id]" options={{ headerShown: true, title: '' }} />
             <Stack.Screen name="group/new" options={{ headerShown: true, title: 'Novo grupo', presentation: 'modal' }} />
             <Stack.Screen name="group/[id]" options={{ headerShown: true, title: 'Grupo' }} />
-            <Stack.Screen name="recap/[username]" options={{ headerShown: true, title: 'Retrospectiva' }} />
+            <Stack.Screen name="recap/[username]" options={{ headerShown: true, title: 'Minha noite' }} />
             <Stack.Screen name="feedback" options={{ headerShown: true, title: 'Reportar problema', presentation: 'modal' }} />
             <Stack.Screen name="checkin/[id]" options={{ headerShown: true, title: 'Check-in', presentation: 'modal' }} />
             <Stack.Screen name="story/new" options={{ headerShown: true, title: 'Novo story', presentation: 'modal' }} />
@@ -103,7 +113,7 @@ export default function RootLayout() {
             <Stack.Screen name="settings" options={{ headerShown: true, title: 'Editar perfil', presentation: 'modal' }} />
             <Stack.Screen name="suggest" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
             <Stack.Screen name="moderation" options={{ headerShown: true, title: 'Moderação' }} />
-            <Stack.Screen name="review/[id]" options={{ presentation: 'modal', headerShown: true, title: 'Avaliar rolê' }} />
+            <Stack.Screen name="review/[id]" options={{ presentation: 'modal', headerShown: true, title: '' }} />
             <Stack.Screen name="reputation" options={{ headerShown: true, title: 'Reputação', presentation: 'modal' }} />
             <Stack.Screen name="design-system" options={{ headerShown: true, title: 'Design system', presentation: 'modal' }} />
           </Stack>

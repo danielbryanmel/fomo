@@ -233,14 +233,14 @@ export const mockRepositories: Repositories = {
       const r = db.reviews.find((x) => x.eventId === eventId && x.authorId === ME);
       return r ? toReviewView(r) : null;
     },
-    async saveReview(eventId, rating, body) {
+    async saveReview(eventId, rating, body, aspects = []) {
       await delay(300);
       const e = db.events.find((x) => x.id === eventId);
       if (!e || !(e.status === 'approved' || e.status === 'ended')) throw new Error('Esse rolê não aceita avaliações.');
       let r = db.reviews.find((x) => x.eventId === eventId && x.authorId === ME);
-      if (r) Object.assign(r, { rating, body });
+      if (r) Object.assign(r, { rating, body, aspects });
       else {
-        r = { id: `r-${Date.now()}`, authorId: ME, eventId, rating, body, helpfulCount: 0, createdAt: new Date().toISOString() };
+        r = { id: `r-${Date.now()}`, authorId: ME, eventId, rating, body, aspects, helpfulCount: 0, createdAt: new Date().toISOString() };
         db.reviews.unshift(r);
       }
       return toReviewView(r);

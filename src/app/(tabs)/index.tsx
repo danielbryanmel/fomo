@@ -95,7 +95,10 @@ export default function ExploreScreen() {
         </Text>
         {explore.loading ? <ActivityIndicator size="small" color={colors.textMuted} style={styles.spinner} /> : null}
       </View>
-      <Text variant="display">{anyLive ? 'Onde tá bom agora' : 'Próximos rolês'}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.md }}>
+        <Text variant="title" style={{ fontSize: 24, lineHeight: 29, flex: 1 }}>{anyLive ? 'Agora perto de você' : 'Próximos rolês'}</Text>
+        <Text variant="body" tone="secondary">{explore.events.length} {explore.events.length === 1 ? 'rolê' : 'rolês'}</Text>
+      </View>
 
       {location.status === 'prompt' && !location.neighborhood ? (
         <View style={styles.locCard}>
@@ -219,7 +222,7 @@ export default function ExploreScreen() {
               />
             </Appear>
           )}
-          ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
+          ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
           contentContainerStyle={[styles.list, { paddingBottom: spacing.xxl }]}
           ListEmptyComponent={
             explore.loading ? undefined : explore.error ? (
@@ -262,7 +265,7 @@ const glass = {
 } as const;
 
 const styles = StyleSheet.create({
-  accuracy: { position: 'absolute', right: 72, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(10,10,12,0.82)', borderWidth: 1, borderColor: colors.border },
+  accuracy: { position: 'absolute', right: 72, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(10,10,11,0.82)', borderWidth: 1, borderColor: colors.border },
   root: { flex: 1, backgroundColor: colors.background },
   top: { position: 'absolute', left: 0, right: 0, top: 0, gap: spacing.md },
   topRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, minHeight: 44 },
@@ -281,6 +284,6 @@ const styles = StyleSheet.create({
   sheetHeader: { gap: spacing.xs, paddingBottom: spacing.lg },
   liveLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   spinner: { marginLeft: 'auto' },
-  locCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.md, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  locCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.md, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surface },
   list: { paddingHorizontal: spacing.lg },
 });

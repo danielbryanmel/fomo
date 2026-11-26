@@ -102,7 +102,7 @@ export default function NewStoryScreen() {
 
 const styles = StyleSheet.create({
   pad: { padding: spacing.lg, gap: spacing.lg, paddingBottom: 60 },
-  pick: { alignItems: 'center', gap: spacing.md, padding: spacing.xl, borderRadius: radius.xl, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  pick: { alignItems: 'center', gap: spacing.md, padding: spacing.xl, borderRadius: radius.xl, backgroundColor: colors.surface },
   center: { textAlign: 'center' },
   row: { flexDirection: 'row', gap: spacing.sm, alignSelf: 'stretch' },
   flex: { flex: 1 },

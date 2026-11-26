@@ -84,7 +84,7 @@ export default function ModerationScreen() {
 const styles = StyleSheet.create({
   content: { padding: spacing.lg, flexGrow: 1 },
   intro: { marginBottom: spacing.lg },
-  card: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  card: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface },
   line: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   row: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
   flex: { flex: 1 },

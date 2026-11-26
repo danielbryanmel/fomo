@@ -7,11 +7,11 @@ import { formatEventDate, formatPrice, formatRelative } from '@/lib/format';
 import { colors, radius, spacing } from '@/theme';
 import type { MapEvent } from '@/types/domain';
 import { CrowdPill } from './CrowdPill';
-import { HeatMeter } from './HeatMeter';
+import { CoverArt } from '@/components/event/CoverArt';
 
 type Props = { event: MapEvent; selected?: boolean; onPress: () => void };
 
-/** Linha da lista "Onde tá bom agora": nome, metadados mono, medidor e frescor do dado. */
+/** Linha da lista (redesign): foto, nome, metadados, frescor do dado e etiqueta de lotação. Sem card. */
 export function LiveEventRow({ event: e, selected, onPress }: Props) {
   const live = e.live;
   const meta = [e.category.name, e.venueName && e.venueName !== e.title ? e.venueName : null, formatDistance(e.distanceM)]
@@ -33,37 +33,30 @@ export function LiveEventRow({ event: e, selected, onPress }: Props) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${e.title}. ${meta}. ${live?.crowd ? `Lotação ${CROWD_LABEL[live.crowd]}, ${live.reportsCount} relatos.` : footerLeft}`}
-      style={({ pressed }) => [styles.card, selected && styles.selected, pressed && { opacity: 0.85 }]}
+      style={({ pressed }) => [styles.row, selected && styles.selected, pressed && { opacity: 0.85 }]}
     >
-      <View style={styles.head}>
-        <View style={styles.flex}>
-          <Text variant="headline" numberOfLines={1}>{e.title}</Text>
-          <Text variant="mono" tone="muted" numberOfLines={1}>{meta}</Text>
-        </View>
-        {e.happeningNow ? <CrowdPill level={live?.crowd ?? null} /> : null}
-        {e.isSponsored ? <Text variant="mono" tone="muted">patrocinado</Text> : null}
-        <DemoTag show={!!e.isDemo} />
+      <View style={styles.thumb}>
+        <CoverArt uri={e.coverUrl} seed={e.id} category={e.category.slug} rounded={12} style={styles.thumbImg} />
       </View>
-      {e.happeningNow ? <HeatMeter level={live?.crowd ?? null} /> : null}
-      <View style={styles.foot}>
-        <Text variant="mono" tone="secondary" numberOfLines={1} style={styles.flex}>{footerLeft}</Text>
-        <Text variant="mono" tone="muted">{footerRight}</Text>
+      <View style={styles.flex}>
+        <Text variant="headline" numberOfLines={1}>{e.title}</Text>
+        <Text variant="body" tone="secondary" numberOfLines={1}>{meta}</Text>
+        <Text variant="caption" tone="muted" numberOfLines={1}>{[footerLeft, footerRight].filter(Boolean).join(' · ')}</Text>
+      </View>
+      <View style={styles.right}>
+        {e.happeningNow ? <CrowdPill level={live?.crowd ?? null} /> : null}
+        {e.isSponsored ? <Text variant="caption" tone="muted">Patrocinado</Text> : null}
+        <DemoTag show={!!e.isDemo} />
       </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  selected: { borderColor: colors.accentPink },
-  head: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
-  foot: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  flex: { flex: 1, gap: 2 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md },
+  selected: { backgroundColor: colors.surface },
+  thumb: { width: 56, height: 56, borderRadius: 12, overflow: 'hidden' },
+  thumbImg: { width: 56, height: 56, aspectRatio: 1 },
+  right: { alignItems: 'flex-end', gap: 4 },
+  flex: { flex: 1, gap: 1 },
 });

@@ -66,7 +66,7 @@ export function NightChart({ timeline }: { timeline: LiveStatus['timeline'] }) {
 }
 
 const styles = StyleSheet.create({
-  card: { gap: spacing.lg, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  card: { gap: spacing.lg, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   bars: { flexDirection: 'row', gap: spacing.sm, height: 110, alignItems: 'flex-end' },
   col: { flex: 1, alignItems: 'center', gap: spacing.xs, height: '100%' },

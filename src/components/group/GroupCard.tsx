@@ -81,7 +81,7 @@ export function GroupCard({ group, onChange }: { group: GroupView; onChange: (g:
 }
 
 const styles = StyleSheet.create({
-  card: { gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  card: { gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface },
   top: { gap: 4 },
   faces: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm },
   face: { borderRadius: 16, borderWidth: 2, borderColor: colors.surface },

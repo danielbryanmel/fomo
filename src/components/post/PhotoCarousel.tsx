@@ -87,7 +87,7 @@ export function PhotoCarousel({ photos, onDoubleTap, onPress, rounded = 0, acces
 const styles = StyleSheet.create({
   wrap: { width: '100%', overflow: 'hidden', backgroundColor: colors.surfaceRaised },
   heart: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center' },
-  counter: { position: 'absolute', top: spacing.md, right: spacing.md, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: 'rgba(10,10,12,0.7)' },
+  counter: { position: 'absolute', top: spacing.md, right: spacing.md, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: 'rgba(10,10,11,0.7)' },
   dots: { position: 'absolute', bottom: spacing.md, alignSelf: 'center', flexDirection: 'row', gap: 5 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.45)' },
   dotActive: { backgroundColor: colors.text, width: 7, height: 7 },

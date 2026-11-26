@@ -2,7 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 import { PressableScale } from '@/components/motion/PressableScale';
 import { Avatar } from '@/components/ui/Avatar';
 import { Text } from '@/components/ui/Text';
@@ -14,18 +14,11 @@ import type { StoryGroup } from '@/types/domain';
 
 const SIZE = 66;
 
-/** Anel da marca (rosa → magenta → roxo) para quem tem story não visto; cinza para visto. */
+/** Anel magenta chapado para quem tem story não visto; cinza para visto. */
 function Ring({ unseen }: { unseen: boolean }) {
   return (
     <Svg width={SIZE + 8} height={SIZE + 8} style={StyleSheet.absoluteFill} aria-hidden>
-      <Defs>
-        <LinearGradient id="sr" x1="0" y1="1" x2="1" y2="0">
-          <Stop offset="0" stopColor={colors.accentPink} />
-          <Stop offset="0.55" stopColor={colors.accent} />
-          <Stop offset="1" stopColor={colors.accentPurple} />
-        </LinearGradient>
-      </Defs>
-      <Circle cx={(SIZE + 8) / 2} cy={(SIZE + 8) / 2} r={(SIZE + 8) / 2 - 2} stroke={unseen ? 'url(#sr)' : colors.borderStrong} strokeWidth={unseen ? 3 : 1.5} fill="none" />
+      <Circle cx={(SIZE + 8) / 2} cy={(SIZE + 8) / 2} r={(SIZE + 8) / 2 - 2} stroke={unseen ? colors.accent : colors.borderStrong} strokeWidth={unseen ? 3 : 1.5} fill="none" />
     </Svg>
   );
 }

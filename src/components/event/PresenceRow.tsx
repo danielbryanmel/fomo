@@ -29,16 +29,16 @@ export function PresenceRow({ eventId, presence }: { eventId: string; presence: 
               : 'Faça check-in: público, só amigos ou anônimo'}
           </Text>
         </View>
-        <Text variant="mono" tone="primary">{me ? 'editar' : 'check-in'}</Text>
+        <View style={{ borderWidth: 1.5, borderColor: colors.text, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}><Text variant="bodyStrong" style={{ fontWeight: '800' }}>{me ? 'Editar' : 'Check-in'}</Text></View>
       </PressableScale>
     </Appear>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, minHeight: 64, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  mine: { borderColor: 'rgba(232,54,140,0.45)' },
+  root: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, minHeight: 64, borderRadius: radius.lg, backgroundColor: colors.surface },
+  mine: {},
   icon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceRaised },
-  iconMine: { backgroundColor: 'rgba(232,54,140,0.28)' },
+  iconMine: { backgroundColor: 'rgba(224,51,143,0.28)' },
   flex: { flex: 1, gap: 2 },
 });

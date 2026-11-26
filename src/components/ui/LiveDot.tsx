@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { cancelAnimation, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, cancelAnimation, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { colors } from '@/theme';
 
 /** Ponto "ao vivo" com pulso discreto. Respeita "reduzir movimento". */
@@ -10,7 +10,7 @@ export function LiveDot({ size = 6, color = colors.live }: { size?: number; colo
 
   useEffect(() => {
     if (reduce) return;
-    pulse.value = withRepeat(withTiming(1, { duration: 1400 }), -1, false);
+    pulse.value = withRepeat(withTiming(1, { duration: 1600, easing: Easing.out(Easing.quad) }), -1, false);
     return () => cancelAnimation(pulse);
   }, [pulse, reduce]);
 

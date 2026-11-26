@@ -172,12 +172,16 @@ export type CredibilityBreakdown = {
 
 /* ───────────────────────── Avaliações ───────────────────────── */
 
+export type ReviewAspect = 'som' | 'lotacao' | 'fila' | 'preco' | 'seguranca' | 'bebida';
+
 export type Review = {
   id: UUID;
   authorId: UUID;
   eventId: UUID | null;
   rating: number; // 1–5
   body: string | null;
+  /** "O que pesou?" — chaves de REVIEW_ASPECTS. */
+  aspects?: ReviewAspect[];
   helpfulCount: number;
   createdAt: ISODateString;
 };

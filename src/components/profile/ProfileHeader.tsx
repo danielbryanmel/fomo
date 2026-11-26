@@ -41,7 +41,7 @@ export function ProfileHeader({ profile, actions }: Props) {
       <View style={styles.levelCard} accessible accessibilityLabel={`Nível ${current.level}, ${current.name}. ${profile.xp} XP.${next ? ` Faltam ${next.minXp - profile.xp} XP para ${next.name}.` : ''}`}>
         <View style={styles.levelTop}>
           <Text variant="mono" tone="muted">nível {current.level}</Text>
-          <Text variant="mono" tone="live">{profile.xp.toLocaleString('pt-BR')}{next ? ` / ${next.minXp.toLocaleString('pt-BR')}` : ''} xp</Text>
+          <Text variant="mono" tone="secondary">{profile.xp.toLocaleString('pt-BR')}{next ? ` / ${next.minXp.toLocaleString('pt-BR')}` : ''} XP</Text>
         </View>
         <Text variant="display">{current.name}</Text>
         <ProgressBar value={progress} height={5} />
@@ -58,10 +58,10 @@ export function ProfileHeader({ profile, actions }: Props) {
         <Link href="/reputation" asChild>
           <Pressable style={StyleSheet.flatten([styles.tile, styles.credTile])} accessibilityRole="link" accessibilityLabel={`Credibilidade ${Math.round(profile.credibilityScore)} de 100. Ver como é calculada`}>
             <View style={styles.credTop}>
-              <Text variant="headline" style={{ color: colors.signal.credibility }}>{Math.round(profile.credibilityScore)}</Text>
+              <Text variant="title" style={{ color: colors.signal.credibility }}>{Math.round(profile.credibilityScore)}</Text>
               <Info size={12} color={colors.textMuted} />
             </View>
-            <Text variant="caption" tone="muted" numberOfLines={1} style={styles.tileLabel}>credib.</Text>
+            <Text variant="caption" tone="secondary" numberOfLines={1} style={styles.tileLabel}>credibilidade</Text>
           </Pressable>
         </Link>
       </View>
@@ -74,8 +74,8 @@ export function ProfileHeader({ profile, actions }: Props) {
 function Tile({ value, label, onPress }: { value: string; label: string; onPress?: () => void }) {
   const body = (
     <>
-      <Text variant="headline">{value}</Text>
-      <Text variant="caption" tone="muted" numberOfLines={1} style={styles.tileLabel}>{label}</Text>
+      <Text variant="title">{value}</Text>
+      <Text variant="caption" tone="secondary" numberOfLines={1} style={styles.tileLabel}>{label}</Text>
     </>
   );
   return onPress ? (
@@ -95,15 +95,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     padding: spacing.lg,
     borderRadius: radius.lg,
-    backgroundColor: 'rgba(28,24,34,0.9)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.surface,
   },
   levelTop: { flexDirection: 'row', justifyContent: 'space-between' },
-  tiles: { flexDirection: 'row', gap: spacing.sm },
-  tile: { flex: 1, gap: 2, paddingVertical: spacing.md, paddingHorizontal: spacing.sm + 2, borderRadius: radius.md, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  tileLabel: { fontSize: 11, lineHeight: 14 },
-  credTile: { borderColor: 'rgba(52,199,123,0.3)' },
-  credTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  tiles: { flexDirection: 'row', gap: spacing.md },
+  tile: { flex: 1, gap: 2, paddingVertical: spacing.xs },
+  tileLabel: { fontSize: 13, lineHeight: 16 },
+  credTile: { flex: 1.3 },
+  credTop: { flexDirection: 'row', gap: 6, alignItems: 'center' },
   actions: { flexDirection: 'row', gap: spacing.sm },
 });

@@ -61,6 +61,6 @@ export default function NewGroupScreen() {
 
 const styles = StyleSheet.create({
   content: { padding: spacing.lg, gap: spacing.lg },
-  event: { gap: 4, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: 'rgba(10,10,12,0.94)' },
+  event: { gap: 4, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface },
+  bar: { position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.lg, paddingTop: spacing.md, backgroundColor: 'rgba(10,10,11,0.94)' },
 });

@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/components/ui/Text';
-import { colors, radius, spacing } from '@/theme';
+import { CROWD_LABEL } from '@/config/live';
+import { colors, heatScale, spacing } from '@/theme';
 import type { MapEvent } from '@/types/domain';
 
 type Props = { event: MapEvent; selected?: boolean };
@@ -15,9 +16,9 @@ type Props = { event: MapEvent; selected?: boolean };
 export function MapPin({ event, selected }: Props) {
   const level = event.live?.crowd ?? null;
   const now = event.happeningNow;
-  const color = level ? colors.heat[level] : now ? colors.text : colors.textSecondary;
-  const size = selected ? 18 : level ? 12 + level : 11;
-  const halo = level ? size + 8 + level * 3 : 0;
+  const color = level ? heatScale[level].dot : now ? colors.text : colors.textMuted;
+  const size = selected ? 18 : 14;
+  const halo = level === 4 ? size + 12 : 0;
 
   return (
     <View style={styles.wrap} pointerEvents="none">
@@ -31,15 +32,18 @@ export function MapPin({ event, selected }: Props) {
               height: size,
               borderRadius: size,
               backgroundColor: now ? color : colors.background,
-              borderColor: now ? (selected ? colors.text : 'rgba(0,0,0,0.5)') : color,
-              borderWidth: now ? (selected ? 2.5 : 1.5) : 2.5,
+              borderColor: now ? colors.text : color,
+              borderWidth: now ? (selected ? 2.5 : 0) : 2.5,
             },
           ]}
         />
       </View>
-      {selected || (level ?? 0) >= 3 || (!event.isDemo && !now) ? (
+      {selected || level || (!event.isDemo && !now) ? (
         <View style={[styles.label, selected && styles.labelSelected]}>
-          <Text variant="label" numberOfLines={1} style={{ fontSize: 11 }}>{event.venueName ?? event.title}</Text>
+          <Text variant="label" numberOfLines={1} style={{ fontSize: 13, fontWeight: '700' }}>
+            {event.venueName ?? event.title}
+            {level ? <Text style={{ fontSize: 13, fontWeight: '800', color: level === 1 ? colors.textSecondary : heatScale[level].dot }}>{`  ${CROWD_LABEL[level]}`}</Text> : null}
+          </Text>
         </View>
       ) : null}
     </View>
@@ -52,11 +56,11 @@ const styles = StyleSheet.create({
   halo: { position: 'absolute', opacity: 0.25 },
   dot: {},
   label: {
-    maxWidth: 140,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.sm,
-    backgroundColor: 'rgba(10,10,12,0.82)',
+    maxWidth: 220,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(21,20,23,0.92)',
   },
   labelSelected: { borderWidth: 1, borderColor: colors.borderStrong },
 });

@@ -178,7 +178,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   content: { padding: spacing.lg, gap: spacing.xs, flexGrow: 1 },
   section: { gap: spacing.md, marginBottom: spacing.lg },
-  request: { gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  request: { gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface },
   who: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   reqActions: { flexDirection: 'row', gap: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm + 2, paddingHorizontal: spacing.sm, borderRadius: radius.md },

@@ -90,7 +90,7 @@ async function hydrate(rows: Row[]): Promise<PostView[]> {
 }
 
 const toReview = (r: Row): ReviewView => ({
-  id: r.id, authorId: r.author_id, eventId: r.event_id, rating: r.rating, body: r.body,
+  id: r.id, authorId: r.author_id, eventId: r.event_id, rating: r.rating, body: r.body, aspects: r.aspects ?? [],
   helpfulCount: r.helpful_count, createdAt: r.created_at, author: toProfile(r.author),
 });
 
@@ -214,12 +214,12 @@ export const supabaseRepositories: Repositories = {
       const r = check(await sb().from('reviews').select('*, author:profiles!reviews_author_id_fkey(*)').eq('event_id', eventId).eq('author_id', me).maybeSingle()) as Row | null;
       return r ? toReview(r) : null;
     },
-    async saveReview(eventId, rating, body) {
+    async saveReview(eventId, rating, body, aspects = []) {
       const me = await uid();
       const existing = await sb().from('reviews').select('id').eq('event_id', eventId).eq('author_id', me).maybeSingle();
       const q = existing.data
-        ? sb().from('reviews').update({ rating, body: body?.trim() || null }).eq('id', existing.data.id)
-        : sb().from('reviews').insert({ author_id: me, event_id: eventId, rating, body: body?.trim() || null });
+        ? sb().from('reviews').update({ rating, body: body?.trim() || null, aspects }).eq('id', existing.data.id)
+        : sb().from('reviews').insert({ author_id: me, event_id: eventId, rating, body: body?.trim() || null, aspects });
       const r = check(await q.select('*, author:profiles!reviews_author_id_fkey(*)').single()) as Row;
       return toReview(r);
     },

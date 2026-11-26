@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   wrap: { marginHorizontal: -spacing.lg },
   row: { paddingHorizontal: spacing.lg, gap: spacing.sm },
-  card: { width: 156, alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  card: { width: 156, alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface },
   who: { alignItems: 'center', gap: 4, alignSelf: 'stretch' },
   dismiss: { position: 'absolute', top: 8, right: 8, zIndex: 2, width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
 });

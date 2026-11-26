@@ -33,7 +33,7 @@ export function ToggleRow({ label, description, value, onChange, icon }: Props) 
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg, borderRadius: radius.lg, backgroundColor: colors.surface },
   text: { flex: 1, gap: 2 },
   track: { width: 48, height: 28, borderRadius: 14, padding: 3, borderWidth: 1, borderColor: colors.border },
   knob: { width: 20, height: 20, borderRadius: 10, backgroundColor: colors.text },

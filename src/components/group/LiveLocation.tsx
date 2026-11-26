@@ -110,7 +110,6 @@ export function LiveLocation({ groupId, canShare }: { groupId: string; canShare:
 
   return (
     <View style={styles.root}>
-      <Text variant="mono" tone="muted">localização ao vivo · só o grupo vê</Text>
 
       {canShare ? (
         sharing ? (
@@ -161,10 +160,10 @@ export function LiveLocation({ groupId, canShare }: { groupId: string; canShare:
 
 const styles = StyleSheet.create({
   root: { gap: spacing.sm },
-  card: { gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-  on: { borderColor: 'rgba(232,54,140,0.5)' },
+  card: { gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface },
+  on: { borderColor: 'rgba(224,51,143,0.5)' },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   flex: { flex: 1, gap: 2 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  person: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.sm, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  person: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.sm, borderRadius: radius.lg, backgroundColor: colors.surface },
 });

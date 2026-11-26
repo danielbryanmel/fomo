@@ -56,5 +56,5 @@ export default function FeedbackScreen() {
 const styles = StyleSheet.create({
   pad: { padding: spacing.lg, gap: spacing.md, paddingBottom: 60 },
   kinds: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  note: { padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  note: { padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surface },
 });

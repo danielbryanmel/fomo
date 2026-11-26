@@ -16,7 +16,7 @@ export function SegmentedTabs<K extends string>({ tabs, value, onChange }: Props
   const idx = Math.max(0, tabs.findIndex((t) => t.key === value));
   const tabW = tabs.length ? w / tabs.length : 0;
   const x = useDerivedValue(() => withSpring(idx * tabW, motion.spring.soft), [idx, tabW]);
-  const bar = useAnimatedStyle(() => ({ transform: [{ translateX: x.value + tabW * 0.2 }], width: tabW * 0.6 }));
+  const bar = useAnimatedStyle(() => ({ transform: [{ translateX: x.value + tabW * 0.1 }], width: tabW * 0.8 }));
 
   return (
     <View style={styles.root} accessibilityRole="tablist" onLayout={(e: LayoutChangeEvent) => setW(e.nativeEvent.layout.width)}>
@@ -40,7 +40,7 @@ export function SegmentedTabs<K extends string>({ tabs, value, onChange }: Props
 }
 
 const styles = StyleSheet.create({
-  root: { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  root: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border },
   tab: { flex: 1, minHeight: hitTarget, alignItems: 'center', justifyContent: 'center', paddingTop: spacing.sm, paddingBottom: spacing.sm },
-  indicator: { position: 'absolute', left: 0, bottom: 0, height: 2, borderRadius: 1, backgroundColor: colors.accentPink },
+  indicator: { position: 'absolute', left: 0, bottom: 0, height: 2, borderRadius: 1, backgroundColor: colors.text },
 });

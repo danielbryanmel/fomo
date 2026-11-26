@@ -1,4 +1,6 @@
 import { Link } from 'expo-router';
+import { PlacesList } from '@/components/profile/PlacesList';
+import { REVIEW_ASPECTS } from '@/config/live';
 import { Lock, MessageSquare, Newspaper, Sparkles } from 'lucide-react-native';
 import { useEffect, useState, type ReactNode } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
@@ -89,7 +91,7 @@ export function ProfileView({ data, actions, onRefresh }: Props) {
             {tab === 'experiences' && posts.data
               ? experiences.length === 0
                 ? <Empty icon={<Sparkles size={24} color={colors.textSecondary} />} text="Nenhum rolê registrado." cta={relationship.isSelf} />
-                : experiences.map((p) => <PostCard key={p.id} post={p} onChange={update} onRemoved={removed} />)
+                : <PlacesList posts={experiences} />
               : null}
 
             {tab === 'reviews' ? (
@@ -105,6 +107,7 @@ export function ProfileView({ data, actions, onRefresh }: Props) {
                       <Text variant="caption" tone="muted">{formatRelative(r.createdAt)}</Text>
                     </View>
                     {r.body ? <Text style={styles.reviewBody}>{r.body}</Text> : null}
+                    {r.aspects?.length ? <Text variant="caption" tone="secondary">Pesou: {r.aspects.map((a) => REVIEW_ASPECTS[a]).join(' · ')}</Text> : null}
                     {r.eventId ? (
                       <Link href={{ pathname: '/event/[id]', params: { id: r.eventId } }}>
                         <Text variant="caption" tone="accent">Ver evento</Text>

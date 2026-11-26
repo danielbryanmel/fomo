@@ -6,10 +6,10 @@ import { colors } from '@/theme';
 export function StarGlyph({ fill, size, empty = colors.border }: { fill: number; size: number; empty?: string }) {
   return (
     <View style={{ width: size, height: size }}>
-      <Star size={size} color={fill > 0 ? colors.warning : empty} fill="transparent" />
+      <Star size={size} color={fill > 0 ? colors.accent : empty} fill="transparent" />
       {fill > 0 ? (
         <View style={[StyleSheet.absoluteFill, { width: size * fill, overflow: 'hidden' }]}>
-          <Star size={size} color={colors.warning} fill={colors.warning} />
+          <Star size={size} color={colors.accent} fill={colors.accent} />
         </View>
       ) : null}
     </View>

@@ -1,8 +1,7 @@
 import { Redirect } from 'expo-router';
-import { FomoSaveIcon } from '@/components/icons/FomoIcons';
 import { Tabs } from 'expo-router/js-tabs';
 import * as SplashScreen from 'expo-splash-screen';
-import { Activity, Newspaper, UserRound } from 'lucide-react-native';
+import { Bookmark, Map, PanelsTopLeft, UserRound } from 'lucide-react-native';
 import { useEffect } from 'react';
 import { FloatingTabBar } from '@/components/navigation/FloatingTabBar';
 import { useAuth } from '@/features/auth/AuthProvider';
@@ -29,10 +28,10 @@ export default function TabLayout() {
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{ headerShown: false, animation: 'shift', sceneStyle: { backgroundColor: colors.background } }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Explorar', tabBarIcon: ({ color, size }) => <Activity size={size} color={color} /> }} />
-      <Tabs.Screen name="feed" options={{ title: 'Feed', tabBarIcon: ({ color, size }) => <Newspaper size={size} color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: 'Explorar', tabBarIcon: ({ color, size }) => <Map size={size} color={color} /> }} />
+      <Tabs.Screen name="feed" options={{ title: 'Feed', tabBarIcon: ({ color, size }) => <PanelsTopLeft size={size} color={color} /> }} />
       <Tabs.Screen name="publish" options={{ title: 'Publicar', tabBarAccessibilityLabel: 'Publicar um rolê' }} />
-      <Tabs.Screen name="saved" options={{ title: 'Quero ir', tabBarIcon: ({ color, size, focused }) => <FomoSaveIcon size={size} color={String(color)} active={focused} /> }} />
+      <Tabs.Screen name="saved" options={{ title: 'Quero ir', tabBarIcon: ({ color, size, focused }) => <Bookmark size={size} color={color} fill={focused ? color : 'transparent'} /> }} />
       <Tabs.Screen name="profile" options={{ title: 'Perfil', tabBarIcon: ({ color, size }) => <UserRound size={size} color={color} /> }} />
     </Tabs>
   );

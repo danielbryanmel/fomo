@@ -473,6 +473,11 @@ ok('cliente NÃO se marca como demo', !!(await fails(A, 'update profiles set is_
 await db.exec(readFileSync(join(root, 'demo_social.sql'), 'utf8'));
 await db.exec(readFileSync(join(root, 'demo_social.sql'), 'utf8')); // idempotente
 const BAILE = 'de0e0000-0000-4000-8000-000000000001';
+// "O que pesou?" (aspects) na avaliação: lista fechada validada no banco
+ok('avaliação: aspectos inválidos são recusados', !!(await fails(B, "insert into reviews (author_id, event_id, rating, aspects) values (auth.uid(), $1, 4, array['hackeado'])", [BAILE])));
+await as(B, "insert into reviews (author_id, event_id, rating, aspects) values (auth.uid(), $1, 4, array['som','lotacao'])", [BAILE]);
+await as(B, "update reviews set aspects = array['fila'] where author_id = auth.uid() and event_id = $1", [BAILE]);
+ok('avaliação: salva e edita "o que pesou"', (await one(B, 'select aspects from reviews where author_id = auth.uid() and event_id = $1', [BAILE])).aspects.join() === 'fila');
 const trayB = (await one(B, 'select stories_tray() t')).t;
 ok('demo social: pessoa real vê stories dos demo que segue', trayB.filter((g) => g.author.is_demo).length >= 4 && trayB.every((g) => g.stories.every((s) => new Date(s.expiresAt) > new Date())));
 ok('demo social: presença do Baile aparece (≥3)', (await one(B, 'select event_presence($1) p', [BAILE])).p.count >= 3);

@@ -1,9 +1,9 @@
 import { Image } from 'expo-image';
+import { FomoLockup } from '@/components/brand/FomoLockup';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { MoonStar, Share2 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Appear, PressableScale } from '@/components/motion';
 import { formatRating, RatingStars } from '@/components/post/RatingStars';
 import { Avatar, Button, Chip, Screen, Skeleton, StateView, Text } from '@/components/ui';
@@ -23,6 +23,14 @@ function nightLabel(key: string) {
   const [y, m, d] = key.split('-').map(Number);
   const t = new Date(y!, m! - 1, d!).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   return t.charAt(0).toUpperCase() + t.slice(1); // "Sábado, 21 de novembro" (não "21 De Novembro")
+}
+/** Versão curta para o título de marca do card: "Segunda, 23 de nov". */
+function nightShort(key: string) {
+  const [y, m, d] = key.split('-').map(Number);
+  const dt = new Date(y!, m! - 1, d!);
+  const wd = dt.toLocaleDateString('pt-BR', { weekday: 'long' }).replace('-feira', '');
+  const mo = dt.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+  return `${wd}, ${d} de ${mo}`;
 }
 
 /** Retrospectiva da noite: lugares, fotos e notas de uma noite, num card para compartilhar. */
@@ -49,7 +57,7 @@ export default function RecapScreen() {
   if (!nights.length || !key) {
     return (
       <Screen>
-        <Stack.Screen options={{ title: 'Retrospectiva' }} />
+        <Stack.Screen options={{ title: 'Minha noite' }} />
         <StateView icon={<MoonStar size={26} color={colors.textSecondary} />} title="Nenhuma noite registrada ainda"
           description="Poste fotos dos seus rolês e a retrospectiva da noite aparece aqui." actionLabel="Postar" onAction={() => router.push('/compose')} />
       </Screen>
@@ -64,7 +72,7 @@ export default function RecapScreen() {
 
   return (
     <Screen bleed edges={['bottom']}>
-      <Stack.Screen options={{ title: 'Retrospectiva' }} />
+      <Stack.Screen options={{ title: 'Minha noite' }} />
       <ScrollView contentContainerStyle={styles.pad}>
         {nights.length > 1 ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
@@ -77,25 +85,13 @@ export default function RecapScreen() {
 
         <Appear key={key}>
           <View style={styles.card}>
-            <Svg style={StyleSheet.absoluteFill} preserveAspectRatio="none">
-              <Defs>
-                <LinearGradient id="rc" x1="0" y1="0" x2="1" y2="1">
-                  <Stop offset="0" stopColor={colors.accentPink} stopOpacity="0.45" />
-                  <Stop offset="0.55" stopColor={colors.accent} stopOpacity="0.18" />
-                  <Stop offset="1" stopColor={colors.accentPurple} stopOpacity="0.4" />
-                </LinearGradient>
-              </Defs>
-              <Rect width="100%" height="100%" fill="url(#rc)" />
-            </Svg>
             <View style={styles.who}>
-              <Avatar name={p.displayName} url={p.avatarUrl} seed={p.id} size={36} />
-              <View>
-                <Text variant="bodyStrong">{p.displayName}</Text>
-                <Text variant="mono" tone="secondary">@{p.username}</Text>
-              </View>
+              <FomoLockup size={18} color={colors.background} />
+              <Text variant="bodyStrong" style={{ color: colors.background, fontWeight: '800' }}>@{p.username}</Text>
             </View>
-            <Text variant="mono" tone="secondary">a noite de</Text>
-            <Text variant="display">{nightLabel(key)}</Text>
+            <Text variant="caption" style={{ color: colors.background, fontWeight: '700' }}>A noite de</Text>
+            <Text variant="brand" style={{ color: colors.background, fontSize: 34, lineHeight: 36 }}>{nightShort(key)}.</Text>
+            <View style={styles.rule} />
 
             {photos.length ? (
               <View style={styles.mosaic}>
@@ -113,22 +109,20 @@ export default function RecapScreen() {
               <Stat value={String(night.length)} label={night.length === 1 ? 'post' : 'posts'} />
               <Stat value={String(likes)} label="curtidas" />
             </View>
-            {avg != null ? <RatingStars value={Math.round(avg * 2) / 2} size={16} /> : null}
             {places.length ? (
-              <View style={styles.places}>
+              <View style={[styles.places, styles.ruleTop]}>
                 {places.map((pl, i) => (
-                  <Text key={pl} variant="bodyStrong">{i + 1}. {pl}</Text>
+                  <Text key={pl} variant="bodyStrong" style={{ color: colors.background, fontWeight: '800' }}>{i + 1}. {pl}</Text>
                 ))}
               </View>
             ) : null}
-            <Text variant="mono" tone="secondary" style={styles.brand}>fomo · o rolê que você não pode perder</Text>
           </View>
         </Appear>
 
-        <Button label="Compartilhar a noite" icon={<Share2 size={18} color={colors.text} />} fullWidth
+        <Button label="Compartilhar a noite" variant="light" icon={<Share2 size={18} color={colors.background} />} fullWidth
           onPress={() => void shareContent(`Minha noite de ${nightLabel(key)} no FOMO`, publicUrl(`/recap/${p.username}?d=${key}`))} />
 
-        <Text variant="mono" tone="muted">posts da noite</Text>
+        <Text variant="section">Posts da noite</Text>
         {night.map((x) => (
           <PressableScale key={x.id} style={styles.row} scaleTo={0.98} onPress={() => router.push({ pathname: '/post/[id]', params: { id: x.id } })}>
             {x.photos[0] ? <Image source={x.photos[0].source} style={styles.thumb} contentFit="cover" /> : <View style={[styles.thumb, styles.noThumb]}><MoonStar size={18} color={colors.textMuted} /></View>}
@@ -147,8 +141,8 @@ export default function RecapScreen() {
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <View style={styles.stat}>
-      <Text variant="headline">{value}</Text>
-      <Text variant="mono" tone="secondary">{label}</Text>
+      <Text variant="title" style={{ color: colors.background }}>{value}</Text>
+      <Text variant="caption" style={{ color: colors.background, fontWeight: '700' }}>{label}</Text>
     </View>
   );
 }
@@ -156,17 +150,19 @@ function Stat({ value, label }: { value: string; label: string }) {
 const styles = StyleSheet.create({
   pad: { padding: spacing.lg, gap: spacing.md, paddingBottom: 60 },
   chips: { gap: spacing.sm },
-  card: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.surface, borderWidth: 1, borderColor: 'rgba(232,54,140,0.4)' },
-  who: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
+  card: { gap: spacing.sm, padding: spacing.lg, borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.accent },
+  who: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm, marginBottom: spacing.md },
+  rule: { height: 2, backgroundColor: colors.background, marginTop: spacing.sm },
+  ruleTop: { borderTopWidth: 2, borderTopColor: colors.background, paddingTop: spacing.md },
   mosaic: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginVertical: spacing.sm, borderRadius: radius.lg, overflow: 'hidden' },
   tile: { width: '49%', aspectRatio: 1, backgroundColor: colors.surfaceRaised, flexGrow: 1 },
   tileFull: { width: '100%', aspectRatio: 4 / 3 },
   tileTall: { width: '100%', aspectRatio: 2 },
-  stats: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm },
+  stats: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: spacing.sm },
   stat: { alignItems: 'flex-start', gap: 2 },
   places: { gap: 4, marginTop: spacing.sm },
   brand: { marginTop: spacing.md },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.sm, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.sm, borderRadius: radius.lg, backgroundColor: colors.surface },
   thumb: { width: 52, height: 52, borderRadius: radius.md },
   noThumb: { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceRaised },
   flex: { flex: 1, gap: 2 },

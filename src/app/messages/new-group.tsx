@@ -61,6 +61,6 @@ export default function NewGroupChatScreen() {
 const styles = StyleSheet.create({
   pad: { padding: spacing.lg, gap: spacing.md, paddingBottom: 120 },
   chips: { gap: spacing.sm },
-  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 4, paddingRight: spacing.sm, height: 34, borderRadius: radius.pill, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 4, paddingRight: spacing.sm, height: 34, borderRadius: radius.pill, backgroundColor: colors.surface },
   footer: { position: 'absolute', left: 0, right: 0, bottom: 0, padding: spacing.lg, backgroundColor: colors.background, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
 });

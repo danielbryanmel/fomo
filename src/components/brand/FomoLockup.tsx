@@ -1,19 +1,17 @@
-import { StyleSheet, View } from 'react-native';
-import { Text } from '@/components/ui/Text';
-import { FomoMark } from './FomoMark';
+import Svg, { G, Path } from 'react-native-svg';
+import { brand } from '@/theme';
+import { FOMO_CRESCENT, FOMO_LETTERS } from './paths';
 
-/**
- * Símbolo + "fomo".
- * ⚠️ O wordmark oficial não foi recebido (aparece só no vídeo de conceito). Até chegar o
- * vetor, o nome usa a fonte do sistema em peso 800 — trocar aqui quando houver o arquivo.
- */
-export function FomoLockup({ size = 22 }: { size?: number }) {
+/** Símbolo + wordmark oficiais (manual de marca). `size` = altura das letras. */
+export function FomoLockup({ size = 22, color = brand.white }: { size?: number; color?: string }) {
+  const h = size;
+  const w = (h * 4728) / 726;
   return (
-    <View style={styles.row} accessibilityRole="header" accessibilityLabel="FOMO">
-      <FomoMark size={size} variant="white" />
-      <Text style={{ fontSize: size * 1.05, lineHeight: size * 1.2, fontWeight: '800', letterSpacing: -size * 0.04 }}>fomo</Text>
-    </View>
+    <Svg width={w} height={h} viewBox="-10 -20 4728 726" accessibilityRole="image" accessibilityLabel="FOMO">
+      <G fill={color}>
+        <G transform="translate(343 343) scale(3.43)"><Path d={FOMO_CRESCENT} /></G>
+        <G transform="translate(812 0)">{FOMO_LETTERS.map((d) => <Path key={d.slice(0, 12)} d={d} />)}</G>
+      </G>
+    </Svg>
   );
 }
-
-const styles = StyleSheet.create({ row: { flexDirection: 'row', alignItems: 'center', gap: 6 } });
