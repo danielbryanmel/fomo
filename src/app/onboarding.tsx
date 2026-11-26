@@ -130,7 +130,8 @@ const STEPS: Step[] = [
 
 export default function Onboarding() {
   const { width } = useWindowDimensions();
-  const [intro, setIntro] = useState(true);
+  // a abertura do logo agora roda em toda abertura do app (LaunchIntro no layout raiz)
+  const [intro, setIntro] = useState(false);
   const [i, setI] = useState(0);
   const step = STEPS[i]!;
   const last = i === STEPS.length - 1;

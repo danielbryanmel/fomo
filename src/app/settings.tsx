@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Field } from '@/components/form/Field';
 import { ToggleRow } from '@/components/form/ToggleRow';
+import { PushSettings } from '@/components/push/PushSettings';
 import { Appear, PressableScale } from '@/components/motion';
 import { ActionSheet, Avatar, Button, StateView, Text, useToast } from '@/components/ui';
 import { OptionGrid } from '@/components/ui/OptionGrid';
@@ -138,6 +139,11 @@ export default function SettingsScreen() {
             <OptionGrid label="quem vê seu check-in (padrão) · anônimo ainda conta no rolê" options={VIS} value={form.defaultCheckinVisibility} onChange={(v) => set('defaultCheckinVisibility', v)} />
             <Text variant="caption" tone="muted">Sua localização em tempo real só aparece quando você liga o compartilhamento com um grupo, e some sozinha no fim. Isto vale para check-ins novos.</Text>
           </View>
+        </Appear>
+
+        <Appear index={3} style={styles.group}>
+          <Text variant="mono" tone="muted">notificações</Text>
+          <PushSettings />
         </Appear>
 
         <Appear index={3} style={styles.group}>

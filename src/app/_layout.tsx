@@ -1,4 +1,7 @@
 import { DarkTheme, type ErrorBoundaryProps, router, Stack, ThemeProvider, type Theme, usePathname } from 'expo-router';
+import { syncPush } from '@/features/push/webPush';
+import { isSupabaseConfigured } from '@/config/env';
+import { LaunchIntro } from '@/components/brand/LaunchIntro';
 import { useEffect } from 'react';
 import { View } from 'react-native';
 import { Button, Text } from '@/components/ui';
@@ -52,6 +55,12 @@ const navigationTheme: Theme = {
     notification: colors.accentPink,
   },
 };
+
+function PushSync() {
+  // renova a inscrição de push no servidor a cada abertura (troca de conta, renovação do navegador)
+  useEffect(() => { if (isSupabaseConfigured) void syncPush(); }, []);
+  return null;
+}
 
 export default function RootLayout() {
   // Archivo (estática). Sem bloquear: se demorar, o texto aparece no sistema e troca sozinho.
@@ -118,6 +127,8 @@ export default function RootLayout() {
             <Stack.Screen name="reputation" options={{ headerShown: true, title: 'Reputação', presentation: 'modal' }} />
             <Stack.Screen name="design-system" options={{ headerShown: true, title: 'Design system', presentation: 'modal' }} />
           </Stack>
+          <PushSync />
+          <LaunchIntro />
         </ToastProvider>
         </AuthProvider>
       </ThemeProvider>

@@ -1,4 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
+import { PushPrompt } from '@/components/push/PushSettings';
+import { isSupabaseConfigured } from '@/config/env';
 import { AlarmClock, Heart, House, MessageCircleMore, MoonStar, Users, Vote } from 'lucide-react-native';
 import { FomoCommentIcon, FomoLikeIcon } from '@/components/icons/FomoIcons';
 import { Award, BellOff, CalendarCheck, ShieldCheck, UserCheck, UserPlus } from 'lucide-react-native';
@@ -125,7 +127,9 @@ export default function NotificationsScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={list.refreshing} onRefresh={() => { void list.refresh(); void requests.refresh(); }} tintColor={colors.accentPink} />}
         ListHeaderComponent={
-          reqs.length ? (
+          <>
+            {isSupabaseConfigured ? <PushPrompt /> : null}
+            {reqs.length ? (
             <View style={styles.section}>
               <Text variant="section">Solicitações · {reqs.length}</Text>
               {reqs.map((p, i) => (
@@ -146,7 +150,8 @@ export default function NotificationsScreen() {
                 </Animated.View>
               ))}
             </View>
-          ) : undefined
+          ) : undefined}
+          </>
         }
         renderItem={({ item: n, index }) => {
           const fresh = n.ids.some((id) => unreadIds.has(id));
