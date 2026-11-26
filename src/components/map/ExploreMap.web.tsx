@@ -129,6 +129,23 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
 
   useImperativeHandle(ref, () => ({ animateTo: (r) => fit(r, true) }));
 
+  /** Esconde etiquetas que se sobrepõem (fica a de maior prioridade: selecionado > lotação). O ponto continua visível. */
+  const declutter = () => {
+    const items = [...markers.current.values()]
+      .map((v) => ({ el: v.m.getElement(), z: Number(v.m.getElement().style.zIndex || 0) }))
+      .sort((a, b) => b.z - a.z);
+    const taken: DOMRect[] = [];
+    for (const it of items) {
+      const lab = it.el.querySelector('.fomo-pin-label') as HTMLElement | null;
+      if (!lab) continue;
+      lab.style.visibility = 'visible';
+      const r = lab.getBoundingClientRect();
+      const hit = taken.some((t) => !(r.right < t.left - 2 || r.left > t.right + 2 || r.bottom < t.top - 2 || r.top > t.bottom + 2));
+      if (hit && it.z < 50) lab.style.visibility = 'hidden';
+      else taken.push(r);
+    }
+  };
+
   const syncPins = () => {
     const map = mapRef.current;
     if (!map) return;
@@ -166,6 +183,7 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
       el.style.zIndex = z;
       markers.current.set(e.id, { m, key });
     }
+    requestAnimationFrame(declutter);
     for (const [id, v] of markers.current) {
       if (!seen.has(id)) {
         v.m.remove();
@@ -270,6 +288,7 @@ export function ExploreMap({ ref, initialRegion, events, selectedId, onSelect, o
       }
     });
     map.on('moveend', () => cb.current.onRegionChangeComplete(regionOf(map)));
+    map.on('zoomend', () => requestAnimationFrame(declutter));
     map.on('click', () => cb.current.onSelect(null));
     const ro = new ResizeObserver(() => map.resize());
     ro.observe(el);

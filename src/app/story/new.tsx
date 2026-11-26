@@ -73,7 +73,7 @@ export default function NewStoryScreen() {
             <Text variant="headline">Mostra o rolê</Text>
             <Text tone="secondary" style={styles.center}>A câmera dupla tira o rolê e, logo depois, sua selfie — numa foto só.</Text>
             <View style={styles.row}>
-              <View style={styles.flex}><Button label="Câmera dupla" icon={<Camera size={16} color={colors.text} />} onPress={() => setCamera(true)} fullWidth /></View>
+              <View style={styles.flex}><Button label="Câmera" icon={<Camera size={16} color={colors.text} />} onPress={() => setCamera(true)} fullWidth /></View>
               <View style={styles.flex}><Button label="Galeria" variant="secondary" icon={<ImagePlus size={16} color={colors.text} />} onPress={fromLibrary} fullWidth /></View>
             </View>
           </View>

@@ -94,7 +94,17 @@ export default function NotificationsScreen() {
   }
 
   const reqs = requests.data ?? [];
-  const items = (list.data ?? []).filter((n) => n.type !== 'follow_request');
+  // agrupa repetidas seguidas (mesma pessoa, mesmo tipo, mesmo alvo): "respondeu ao convite" 4× vira 1 linha
+  const items = (list.data ?? [])
+    .filter((n) => n.type !== 'follow_request')
+    .reduce<(NotificationView & { times: number; ids: string[] })[]>((acc, n) => {
+      const prev = acc[acc.length - 1];
+      if (prev && prev.type === n.type && prev.actor?.id === n.actor?.id && prev.entityId === n.entityId) {
+        prev.times += 1;
+        prev.ids.push(n.id);
+      } else acc.push({ ...n, times: 1, ids: [n.id] });
+      return acc;
+    }, []);
 
   return (
     <Screen bleed edges={['bottom']}>
@@ -106,7 +116,7 @@ export default function NotificationsScreen() {
         ListHeaderComponent={
           reqs.length ? (
             <View style={styles.section}>
-              <Text variant="mono" tone="muted">solicitações · {reqs.length}</Text>
+              <Text variant="section">Solicitações · {reqs.length}</Text>
               {reqs.map((p, i) => (
                 <Animated.View key={p.id} exiting={exit} layout={layout}>
                   <Appear index={i} style={styles.request}>
@@ -128,7 +138,7 @@ export default function NotificationsScreen() {
           ) : undefined
         }
         renderItem={({ item: n, index }) => {
-          const fresh = unreadIds.has(n.id);
+          const fresh = n.ids.some((id) => unreadIds.has(id));
           return (
             <Animated.View layout={layout}>
               <Appear index={index}>
@@ -145,6 +155,7 @@ export default function NotificationsScreen() {
                     <Text numberOfLines={3}>
                       {n.actor ? <Text variant="bodyStrong">{n.actor.username} </Text> : null}
                       {COPY[n.type]}
+                      {n.times > 1 ? <Text tone="muted">{` · ${n.times}×`}</Text> : null}
                     </Text>
                     <Text variant="mono" tone="muted">{formatRelative(n.createdAt) === 'agora' ? 'agora' : `há ${formatRelative(n.createdAt)}`}</Text>
                   </View>
