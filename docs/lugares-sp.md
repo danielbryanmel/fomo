@@ -60,3 +60,10 @@ Seed: `supabase/venues_sp.sql` · shows reais: `supabase/events_sp.sql`.
 - **Backyard:** a fonte é o Backyard Coliving (Rua Harmonia, 255), com o bar 255 Food & Booze. Se o "Backyard" pensado era outro, trocar.
 - Algumas fontes (comerciosaopaulo.com.br) são guias genéricos: vale conferir no Instagram da casa se segue aberta.
 - Ficaram de fora por endereço conflitante entre fontes: Pasquim, Bar Samba, Sancho, Blitz Haus, Tatu Bola Tatuapé.
+
+## Festas da Resident Advisor (consultado em 25/11/2026)
+
+Seeds: `supabase/venues_sp_2.sql` (11 lugares novos) e `supabase/events_sp_ra.sql` (20 festas, 25 a 28/11).
+Lugares novos: Crema Club, Fabriketa, Armazém Solon, Barraco SP/CO, Bar Carmem, Bar do Netão, Fugaz Bar,
+Major Bar & Pista, Sala Bar, Casa Arouche, Edifício Martinelli. Cada festa tem o link da RA como ingresso/fonte.
+Ficaram de fora: Michael Bibi (sem endereço na página), Millennium (local "TBA"), Feira de Vinil (é em Campinas).
