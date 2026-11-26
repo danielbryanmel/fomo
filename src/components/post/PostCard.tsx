@@ -21,6 +21,8 @@ type Props = {
   onRemoved?: (id: string) => void;
   /** No detalhe, a legenda não é truncada. */
   detail?: boolean;
+  /** No detalhe: o ícone de comentário leva ao campo de comentar. */
+  onCommentPress?: () => void;
 };
 
 /**
@@ -28,12 +30,13 @@ type Props = {
  * autor + lugar → fotos (carrossel, toque duplo curte) → ações → curtidas → legenda → selos.
  * Credibilidade fica no perfil (não polui o card); nível aparece discreto.
  */
-export function PostCard({ post, onChange, onRemoved, detail }: Props) {
+export function PostCard({ post, onChange, onRemoved, detail, onCommentPress }: Props) {
   const actions = usePostActions(post, onChange, onRemoved);
   const [menu, setMenu] = useState<'none' | 'menu' | 'confirmDelete'>('none');
   const [expanded, setExpanded] = useState(!!detail);
 
   const openPost = () => !detail && router.push({ pathname: '/post/[id]', params: { id: post.id } });
+  const openComments = () => (onCommentPress ? onCommentPress() : router.push({ pathname: '/post/[id]', params: { id: post.id, comentar: '1' } }));
   const place = post.event?.title ?? post.placeName;
   const hasPhotos = post.photos.length > 0;
   const likeOnly = () => !post.likedByMe && actions.toggleLike();
@@ -79,7 +82,7 @@ export function PostCard({ post, onChange, onRemoved, detail }: Props) {
           onPress={actions.toggleLike}
           icon={<FomoLikeIcon size={25} active={post.likedByMe} />}
         />
-        <IconButton label="Comentários" onPress={openPost} icon={<FomoCommentIcon size={25} />} />
+        <IconButton label="Comentários" onPress={openComments} icon={<FomoCommentIcon size={25} />} />
         <IconButton label="Chamar a galera" onPress={actions.share} icon={<FomoShareIcon size={24} />} />
         <View style={styles.flex} />
         <IconButton

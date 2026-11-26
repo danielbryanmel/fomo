@@ -56,7 +56,7 @@ export function PhotoCarousel({ photos, onDoubleTap, onPress, rounded = 0, acces
       onLayout={(e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width)}
       accessibilityLabel={accessibilityLabel ?? `${photos.length} ${photos.length === 1 ? 'foto' : 'fotos'}`}
     >
-      <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={32} scrollEnabled={photos.length > 1}>
+      <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={32}>
         {photos.map((p, i) => (
           <Pressable key={i} onPress={handlePress} style={{ width, height: '100%' }} accessibilityRole="image" accessibilityLabel={`Foto ${i + 1} de ${photos.length}`} accessibilityHint="Toque duas vezes para curtir">
             <Image source={p.source} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} recyclingKey={typeof p.source === 'number' ? String(p.source) : p.source.uri} />

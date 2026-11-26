@@ -1,8 +1,8 @@
 import { Link } from 'expo-router';
 import { FomoCommentIcon } from '@/components/icons/FomoIcons';
 import { SendHorizontal, Trash2 } from 'lucide-react-native';
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { type ComponentRef, forwardRef, useState } from 'react';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut, LinearTransition, ReduceMotion } from 'react-native-reanimated';
 import { PressableScale } from '@/components/motion';
 import { Avatar, Text, useToast } from '@/components/ui';
@@ -17,10 +17,8 @@ const enter = FadeInDown.springify().damping(motion.spring.soft.damping).reduceM
 const exit = FadeOut.duration(motion.fast).reduceMotion(ReduceMotion.System);
 const layout = LinearTransition.springify().damping(motion.spring.soft.damping).reduceMotion(ReduceMotion.System);
 
-type Props = { postId: string; onCountChange?: (delta: number) => void };
-
-/** Lista + campo de comentário. Quem pode ver/comentar/apagar é decidido pela RLS. */
-export function Comments({ postId, onCountChange }: Props) {
+/** Estado dos comentários (lista + rascunho). Quem pode ver/comentar/apagar é decidido pela RLS. */
+export function useComments(postId: string, onCountChange?: (delta: number) => void) {
   const toast = useToast();
   const list = useAsync(() => repositories.social.listComments(postId), [postId]);
   const [text, setText] = useState('');
@@ -28,15 +26,17 @@ export function Comments({ postId, onCountChange }: Props) {
 
   async function send() {
     const body = text.trim();
-    if (!body || sending) return;
+    if (!body || sending) return false;
     setSending(true);
     try {
       const c = await repositories.social.addComment(postId, body);
       list.setData((prev) => [...(prev ?? []), c]);
       setText('');
       onCountChange?.(1);
+      return true;
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Não foi possível comentar.', 'error');
+      return false;
     } finally {
       setSending(false);
     }
@@ -54,8 +54,13 @@ export function Comments({ postId, onCountChange }: Props) {
     }
   }
 
-  const items = list.data ?? [];
+  return { list, items: list.data ?? [], text, setText: (t: string) => setText(t.slice(0, MAX)), sending, send, remove };
+}
+export type CommentsState = ReturnType<typeof useComments>;
 
+/** Lista de comentários (fica dentro da rolagem da publicação). */
+export function CommentList({ state, onEmptyPress }: { state: CommentsState; onEmptyPress?: () => void }) {
+  const { list, items, remove } = state;
   return (
     <View style={styles.root}>
       <Text variant="mono" tone="muted">comentários{items.length ? ` · ${items.length}` : ''}</Text>
@@ -65,10 +70,10 @@ export function Comments({ postId, onCountChange }: Props) {
         <Pressable onPress={list.refresh} style={styles.pad}><Text tone="danger" align="center">Não carregou. Toque para tentar de novo.</Text></Pressable>
       ) : null}
       {!list.loading && !list.error && !items.length ? (
-        <View style={[styles.empty, styles.pad]}>
+        <Pressable onPress={onEmptyPress} style={[styles.empty, styles.pad]} accessibilityRole="button" accessibilityLabel="Escrever o primeiro comentário">
           <FomoCommentIcon size={24} color={colors.textMuted} />
           <Text tone="muted" align="center">Ninguém comentou ainda. Conta como foi.</Text>
-        </View>
+        </Pressable>
       ) : null}
 
       {items.map((c) => (
@@ -92,34 +97,49 @@ export function Comments({ postId, onCountChange }: Props) {
           ) : null}
         </Animated.View>
       ))}
-
-      <View style={styles.composer}>
-        <TextInput
-          value={text}
-          onChangeText={(t) => setText(t.slice(0, MAX))}
-          placeholder="Adicione um comentário…"
-          placeholderTextColor={colors.textMuted}
-          style={styles.input}
-          multiline
-          maxLength={MAX}
-          accessibilityLabel="Escrever comentário"
-          onSubmitEditing={send}
-          submitBehavior="submit"
-        />
-        <PressableScale
-          onPress={send}
-          disabled={!text.trim() || sending}
-          scaleTo={0.88}
-          accessibilityRole="button"
-          accessibilityLabel="Enviar comentário"
-          style={[styles.send, (!text.trim() || sending) && styles.sendOff]}
-        >
-          {sending ? <ActivityIndicator size="small" color={colors.text} /> : <SendHorizontal size={18} color={colors.text} />}
-        </PressableScale>
-      </View>
     </View>
   );
 }
+
+/** Campo de comentário fixo no rodapé da publicação (sempre à vista, como no Instagram). */
+export const CommentComposer = forwardRef<ComponentRef<typeof TextInput>, { state: CommentsState; onSent?: () => void }>(function CommentComposer({ state, onSent }, ref) {
+  const { text, setText, sending, send } = state;
+  const off = !text.trim() || sending;
+  const go = async () => { if (await send()) onSent?.(); };
+  return (
+    <View style={styles.composer}>
+      <TextInput
+        ref={ref}
+        value={text}
+        onChangeText={setText}
+        placeholder="Comente algo…"
+        placeholderTextColor={colors.textMuted}
+        style={styles.input}
+        multiline
+        maxLength={MAX}
+        accessibilityLabel="Escrever comentário"
+        onSubmitEditing={go}
+        onKeyPress={(e) => {
+          // web: Enter envia, Shift+Enter quebra linha
+          const ne = e.nativeEvent as { key: string; shiftKey?: boolean };
+          if (Platform.OS === 'web' && ne.key === 'Enter' && !ne.shiftKey) { (e as unknown as { preventDefault?: () => void }).preventDefault?.(); void go(); }
+        }}
+        submitBehavior="submit"
+        enterKeyHint="send"
+      />
+      <PressableScale
+        onPress={go}
+        disabled={off}
+        scaleTo={0.88}
+        accessibilityRole="button"
+        accessibilityLabel="Enviar comentário"
+        style={[styles.send, off && styles.sendOff]}
+      >
+        {sending ? <ActivityIndicator size="small" color={colors.textOnAccent} /> : <SendHorizontal size={18} color={colors.textOnAccent} />}
+      </PressableScale>
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   root: { gap: spacing.md },
@@ -128,12 +148,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.sm + 2, alignItems: 'flex-start' },
   bubble: { flex: 1, gap: 2 },
   del: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   input: {
     flex: 1, minHeight: hitTarget, maxHeight: 120, color: colors.text, fontSize: 15,
     paddingHorizontal: spacing.lg, paddingTop: 14, paddingBottom: 12,
     backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border,
   },
-  send: { width: hitTarget, height: hitTarget, borderRadius: hitTarget / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentPink },
-  sendOff: { opacity: 0.35 },
+  send: { width: hitTarget, height: hitTarget, borderRadius: hitTarget / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent },
+  sendOff: { opacity: 0.4 },
 });
